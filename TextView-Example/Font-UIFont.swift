@@ -9,7 +9,6 @@ import SwiftUI
 // Conversion code for SwiftUI.Font to UIFont Starts here
 extension AttributedString {
     
-    
     var nsAttributedString : NSAttributedString { print("Converting", self); return convertToUIAttributes() }
     
     func convertToUIAttributes(traitCollection: UITraitCollection? = nil) -> NSMutableAttributedString {

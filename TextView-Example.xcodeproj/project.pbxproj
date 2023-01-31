@@ -24,6 +24,7 @@
 		37DB23692989CACA0021BDD0 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		37DB23702989CB330021BDD0 /* TextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextView.swift; sourceTree = "<group>"; };
 		37DB23722989CBE80021BDD0 /* Font-UIFont.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Font-UIFont.swift"; sourceTree = "<group>"; };
+		37DB23742989D2430021BDD0 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -63,6 +64,7 @@
 				37DB23652989CACA0021BDD0 /* Assets.xcassets */,
 				37DB23672989CACA0021BDD0 /* TextView_Example.entitlements */,
 				37DB23682989CACA0021BDD0 /* Preview Content */,
+				37DB23742989D2430021BDD0 /* README.md */,
 			);
 			path = "TextView-Example";
 			sourceTree = "<group>";
