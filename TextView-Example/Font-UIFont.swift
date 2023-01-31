@@ -55,8 +55,6 @@ extension AttributedString {
     }
 }
 
-
-
 // AttributedString(styledMarkdown: String, fonts: [Font]) puts fonts into Headers 1-6
 // and setFont for SwiftUI.Font, along with setBold, and setItalic that work with SwiftUI.Font and UIFont
 // embedded in the attributed string
