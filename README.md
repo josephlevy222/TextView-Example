@@ -20,8 +20,7 @@ to make a general converter for SwiftUI.Fonts to UIFonts.
 
 As I write this the an AttributedString with SwiftUI Fonts converts to an NSAttributedString with UIFont and back for
 regular, bold, italic, and underline text in the dynamic sizes and custom sizes in my testing.  I have not tested the 
-various designs, like monospace, etc, or strikethrough, superscripts, subscripts, and colors to name a few.  Only a few 
-modifiers like bold and italic are included but weight and I'm sure others are not. 
+various designs, like monospace, etc, or strikethrough, superscripts, subscripts, but I added support for them and color work
+well enough.  Only a few modifiers like bold and italic, weight, and width are included and I'm sure others are not. 
 
-It is far from complete and I hope some will take
-interest in filling in more cases. 
+It is far from complete and I hope some will take interest in filling in more cases. 
