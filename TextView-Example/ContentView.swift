@@ -7,22 +7,24 @@
 import SwiftUI
 
 let aText: AttributedString = (AttributedString("Hello,",attributes: AttributeContainer().kern(1.5)).setFont(to: .title2).setItalic()
-                               + AttributedString(" world!",attributes: AttributeContainer().foregroundColor(.yellow).backgroundColor(.blue)).setFont(to: .title2)).setBold() + AttributedString(" in body").setFont(to: .body.weight(.ultraLight))
+                               + AttributedString(" world!",attributes: AttributeContainer().foregroundColor(.yellow).backgroundColor(.blue)).setFont(to: .title2)).setBold() + AttributedString(" in body").setFont(to: .body.weight(.ultraLight))//.setBold()//.setFont(to: .body.weight(.bold))//.setItalic()
 
 
 struct ContentView: View {
     
     @State var text : AttributedString
-    
+    @State var nsText: NSAttributedString
     var body: some View {
         VStack(alignment: .leading) {
             Image(systemName: "globe")
                 .imageScale(.large)
                 .foregroundColor(.accentColor)
-            Text(text)
+            Text(text).padding(4)
+    
+            TextView(attributedText: $text, allowsEditingTextAttributes: true).frame(height: 100)
+            //UTextView(attributedText: $nsText, allowsEditingTextAttributes: true).frame(height: 100)
             Button("Change Text") { text = text.setItalic() }
-            
-            TextView(attributedText: $text, allowsEditingTextAttributes: true)
+            Spacer()
         }
         .padding()
         //        .onAppear {
@@ -36,7 +38,7 @@ struct ContentView: View {
 
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
-        ContentView(text: aText)
+        ContentView(text: aText.convertToUICompatible(), nsText: aText.nsAttributedString)
     }
 }
 
