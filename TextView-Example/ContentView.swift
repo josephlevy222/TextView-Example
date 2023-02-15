@@ -6,7 +6,7 @@
 //
 import SwiftUI
 
-let aText: AttributedString = (AttributedString("Hello,",attributes: AttributeContainer().kern(1.5)).setFont(to: .title2).setItalic()
+let aText: AttributedString = {do  { return try AttributedString(styledMarkdown: "# Big ")} catch { return AttributedString("Big")}}() + (AttributedString(" Hello,",attributes: AttributeContainer().kern(1.5)).setFont(to: .title2).setItalic()
                                + AttributedString(" world!",attributes: AttributeContainer().foregroundColor(.yellow).backgroundColor(.blue)).setFont(to: .title2)).setBold() + AttributedString(" in body").setFont(to: .body.weight(.ultraLight))//.setBold()//.setFont(to: .body.weight(.bold))//.setItalic()
 
 

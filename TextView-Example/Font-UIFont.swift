@@ -27,44 +27,46 @@ extension AttributedString {
         var nsAttributes = [NSAttributedString.Key : Any ]()
         let nsAttributedString = NSMutableAttributedString(self)
         for run in runs {
-
+            print("Run of: ",self[run.range])
             let nsRange = NSRange(run.range, in: self[run.range])
             // Handle font  /// A property for accessing a font attribute.
-            let font = run.font
-            if  let uiFont = resolveFont(font ?? .body)?.font(with: traitCollection) {
-                let uiAttributes = run.attributes.description.contains("NSFont")
-                if !uiAttributes {  nsAttributes[.font] = uiFont }
-                //else { nsAttributes[.font] = UIFont.TextStyle.body; print("Body set")}
-                print("Run of: ",self[run.range], " will use UIFont: ", uiFont)
-                // Handle SwiftUIAttributes
-                // foregroundColor /// A property for accessing a foreground color attribute.
-                if let color = run.foregroundColor { nsAttributes[.foregroundColor] = UIColor(color) }
-                else { if !uiAttributes { nsAttributes.removeValue(forKey:.foregroundColor) }}
-                // backgroundColor /// A property for accessing a background color attribute.
-                if let color = run.backgroundColor {  nsAttributes[.backgroundColor] = UIColor(color) }
-                else { if !uiAttributes { nsAttributes.removeValue(forKey: .backgroundColor) }}
-                // strikethrough /// A property for accessing a strikethrough style attribute.
-                if let strikethroughStyle = run.strikethroughStyle { nsAttributes[.strikethroughStyle] = strikethroughStyle }
-                else { if !uiAttributes { nsAttributes.removeValue(forKey: .strikethroughStyle) }}
-                // underlineStyle /// A property for accessing an underline style attribute.
-                if let underlineStyle = run.underlineStyle { nsAttributes[.underlineStyle] = underlineStyle }
-                else { if !uiAttributes { nsAttributes.removeValue(forKey: .underlineStyle) }}
-                // kern /// A property for accessing a kerning attribute.
-                if let kern = run.kern { nsAttributes[.kern] = kern }
-                else { if !uiAttributes { nsAttributes.removeValue(forKey: .kern) }}
-                // tracking /// A property for accessing a tracking attribute.
-                if  let tracking = run.tracking { nsAttributes[.tracking] = tracking }
-                else { if !uiAttributes { nsAttributes.removeValue(forKey: .tracking) }}
-                // baselineOffset /// A property for accessing a baseline offset attribute.
-                if let baselineOffset = run.baselineOffset { nsAttributes[.baselineOffset] = baselineOffset }
-                else { if !uiAttributes { nsAttributes.removeValue(forKey: .baselineOffset) }}
-                if !nsAttributes.isEmpty {
-                    nsAttributedString.setAttributes(nsAttributes, range: nsRange)
+            let isNSFont = run.attributes.description.contains("NSFont")
+            if !isNSFont {
+                if let uiFont = resolveFont(run.font ?? .body)?.font(with: traitCollection) {
+                    nsAttributes[.font] = uiFont
+                    print("Now with NSFont: \(uiFont) with weight \(String(describing: uiFont.weight))")
                 }
-            } else { print("nil font in range of: \(self[run.range])")}// never happens!?
-        }
-        return nsAttributedString
+            } else { //NSFont
+                
+            }
+            // Handle other SwiftUIAttributes
+            // foregroundColor /// A property for accessing a foreground color attribute.
+            if let color = run.foregroundColor { nsAttributes[.foregroundColor] = UIColor(color) }
+            else { if !isNSFont { nsAttributes.removeValue(forKey:.foregroundColor) }}
+            // backgroundColor /// A property for accessing a background color attribute.
+            if let color = run.backgroundColor {  nsAttributes[.backgroundColor] = UIColor(color) }
+            else { if !isNSFont { nsAttributes.removeValue(forKey: .backgroundColor) }}
+            // strikethrough /// A property for accessing a strikethrough style attribute.
+            if let strikethroughStyle = run.strikethroughStyle { nsAttributes[.strikethroughStyle] = strikethroughStyle }
+            else { if !isNSFont { nsAttributes.removeValue(forKey: .strikethroughStyle) }}
+            // underlineStyle /// A property for accessing an underline style attribute.
+            if let underlineStyle = run.underlineStyle { nsAttributes[.underlineStyle] = underlineStyle }
+            else { if !isNSFont { nsAttributes.removeValue(forKey: .underlineStyle) }}
+            // kern /// A property for accessing a kerning attribute.
+            if let kern = run.kern { nsAttributes[.kern] = kern }
+            else { if !isNSFont { nsAttributes.removeValue(forKey: .kern) }}
+            // tracking /// A property for accessing a tracking attribute.
+            if  let tracking = run.tracking { nsAttributes[.tracking] = tracking }
+            else { if !isNSFont { nsAttributes.removeValue(forKey: .tracking) }}
+            // baselineOffset /// A property for accessing a baseline offset attribute.
+            if let baselineOffset = run.baselineOffset { nsAttributes[.baselineOffset] = baselineOffset }
+            else { if !isNSFont { nsAttributes.removeValue(forKey: .baselineOffset) }}
+            if !nsAttributes.isEmpty {
+                nsAttributedString.setAttributes(nsAttributes, range: nsRange)
+            }
     }
+    return nsAttributedString
+}
 }
 
 // AttributedString(styledMarkdown: String, fonts: [Font]) puts fonts into Headers 1-6
@@ -93,13 +95,9 @@ extension AttributedString {
         for (intentBlock, intentRange) in output.runs[AttributeScopes.FoundationAttributes.PresentationIntentAttribute.self].reversed() {
             guard let intentBlock = intentBlock else { continue }
             for intent in intentBlock.components {
-                switch intent.kind {
-                case .header(level: let level): // assigns intent.kind.headerLevel to level?
-                    if (1..<fonts.count).contains(level) {
-                        output[intentRange].font = UIFont.preferredFont(from: fonts[level]) as CTFont
-                    }
-                default:
-                    break
+                for level in 1..<fonts.count where intent.kind == .header(level: level) {
+                    print("header level \(level)")
+                    output[intentRange].font = UIFont.preferredFont(from: fonts[level]) as CTFont
                 }
             }
             
@@ -125,20 +123,9 @@ extension AttributedString {
         var newAS = self
         for run in runs {
             if let font = run.font { newAS[run.range].font = font.bold() }
-            else {
-                let attributesDescription = run.attributes.description
-                if attributesDescription.contains("NSFont") {
-                    print("NSFont detected in setBold") // Have to change it to bold
-                    if  let r1 = attributesDescription.range(of: "font-family: \""),
-                        let r2 = attributesDescription.range(of: "\"",
-                                                             range: r1.upperBound..<attributesDescription.endIndex) {
-                        let styleString = attributesDescription[r1.upperBound..<r2.lowerBound]
-                        let style = UIFont.TextStyle(rawValue: String(styleString))
-                        print("style: ", style)
-                        let uiFont = UIFont.preferredFont(forTextStyle: style).bold()
-                        newAS[run.range].font = uiFont
-                    }
-                }
+            else { // assume NSFont
+                let uiFont = run.attributes.font ?? UIFont.preferredFont(forTextStyle: .body)
+                newAS[run.range].font = uiFont.bold()
             }
         }
         return newAS
@@ -148,20 +135,36 @@ extension AttributedString {
         var newAS = self
         for run in runs {
             if let font = run.font { newAS[run.range].font = font.italic() }
+            else { // assume NSFont
+                let uiFont = run.attributes.font ?? UIFont.preferredFont(forTextStyle: .body)
+                newAS[run.range].font = uiFont.italic()
+            }
+        }
+        return newAS
+    }
+    
+    func setup() -> AttributedString {
+        var newAS = self
+        for run in runs {
+            if let font = run.font { newAS[run.range].font = font }
             else {
+                let attributes = run.attributes
                 let attributesDescription = run.attributes.description
                 if attributesDescription.contains("NSFont") {
-                    print("NSFont detected in setBold") // Have to change it to bold
+                    let ctFont = attributes.font ?? UIFont.preferredFont(forTextStyle: .body) //as CTFont
+                    let weight = ctFont.weight
+                    print("NSFont detected in setup") // Have to change it to bold
                     if  let r1 = attributesDescription.range(of: "font-family: \""),
                         let r2 = attributesDescription.range(of: "\"",
                                                              range: r1.upperBound..<attributesDescription.endIndex) {
                         let styleString = attributesDescription[r1.upperBound..<r2.lowerBound]
                         let style = UIFont.TextStyle(rawValue: String(styleString))
-                        print("style: ", style)
-                        let uiFont = UIFont.preferredFont(forTextStyle: style).italic()
+                        //let weight = style
+                        //print("style: ", style)
+                        let uiFont = UIFont.preferredFont(forTextStyle: style).withWeight(weight)
                         newAS[run.range].font = uiFont
                     }
-                }
+               }
             }
         }
         return newAS
@@ -175,7 +178,7 @@ extension UIFontDescriptor {
     func withWidth(_ width: UIFont.Width?) -> UIFontDescriptor {
         if let width { return addingAttributes([.traits: [UIFontDescriptor.TraitKey.width: width]]) } else { return self }
     }
-    var weight: UIFont.Weight {
+    var weight: UIFont.Weight { // nil means no weight trait is set
         let traits = object(forKey: .traits) as? [UIFontDescriptor.TraitKey: Any] ?? [:]
         guard let weightNumber = traits[.weight] as? NSNumber else { return .regular }
         return UIFont.Weight(rawValue: weightNumber.doubleValue)
@@ -189,7 +192,7 @@ extension UIFontDescriptor {
 
 extension UIFont {
     // get font weight
-    var weight: UIFont.Weight { fontDescriptor.weight }
+    var weight: UIFont.Weight? { fontDescriptor.weight }
     // get font width
     var width: UIFont.Width { fontDescriptor.width }
     
@@ -204,7 +207,7 @@ extension UIFont {
     func italic() -> UIFont? {
         guard let newDescriptor = fontDescriptor.withSymbolicTraits(fontDescriptor.symbolicTraits.union(.traitItalic))
         else { return nil }
-        return UIFont(descriptor: newDescriptor, size: pointSize)
+        return UIFont(descriptor: newDescriptor, size: pointSize).withWeight(weight)
     }
     
     func withWeight(_ weight: UIFont.Weight?) -> UIFont {
@@ -309,12 +312,13 @@ struct TextStyleProvider: FontProvider {
     var weight: UIFont.Weight?
     func fontDescriptor(with traitCollection: UITraitCollection?) -> UIFontDescriptor {
         let uiFont = UIFont
-            .preferredFont(forTextStyle: style ?? UIFont.TextStyle(rawValue: "UICTFontTextStyleBody"), compatibleWith: traitCollection).withWeight(weight)
-        if let style { print("style=\(style)") } else { print("style = .body")}
+            .preferredFont(forTextStyle: style ?? UIFont.TextStyle(rawValue: "UICTFontTextStyleBody"), compatibleWith: traitCollection)
+            .withWeight(weight)
+        //if let style { print("style=\(style)") } else { print("style = .body")}
         if let descriptor = uiFont.fontDescriptor
             .withDesign(design)?
             .addingAttributes([.size : uiFont.pointSize])
-            .withWeight(weight ?? UIFont.Weight.regular) {
+            .withWeight(weight) {
             return descriptor
         }
         return uiFont.fontDescriptor
@@ -366,7 +370,7 @@ struct ItalicModifier: StaticFontModifier {
         let weight = fontDescriptor.weight
         let traits = fontDescriptor.symbolicTraits.union(.traitItalic)
         if let fd = fontDescriptor.withSymbolicTraits(traits) {
-            fontDescriptor = fd.withWeight(weight)
+            fontDescriptor = weight == .regular ? fd : fd.withWeight(weight)
         } else { print("fontDescriptor can't be made italic") }
     }
 }
@@ -374,8 +378,10 @@ struct ItalicModifier: StaticFontModifier {
 struct BoldModifier: StaticFontModifier {
     init() {}
     func modify(_ fontDescriptor: inout UIFontDescriptor) {
-        let traits = fontDescriptor.symbolicTraits.union(.traitBold)
-        fontDescriptor = fontDescriptor.withSymbolicTraits(traits) ?? fontDescriptor
+        let traits = fontDescriptor.object(forKey: .traits) as? [UIFontDescriptor.TraitKey: Any] ?? [:]
+        //print("Traits in BoldModifier: ", traits)
+        let traits0 = fontDescriptor.symbolicTraits.union(.traitBold)
+        fontDescriptor = fontDescriptor.withSymbolicTraits(traits0) ?? fontDescriptor
     }
 }
 
@@ -393,6 +399,7 @@ func resolveFont(_ font: Font) -> FontProvider? {
 
 func resolveFontProvider(_ provider: Any) -> FontProvider? {
     let mirror = Mirror(reflecting: provider)
+    //print("Mirroring: ", mirror)
     let providerType = String(describing: type(of: provider))
     switch providerType {
         
@@ -429,7 +436,7 @@ func resolveFontProvider(_ provider: Any) -> FontProvider? {
             return nil
         }
         let design = mirror.descendant("design") as? UIFontDescriptor.SystemDesign ?? UIFontDescriptor.SystemDesign.default
-        let weight = mirror.descendant("weight") as? UIFont.Weight ; print("Weight=\(weight ?? .init(0)) ")
+        let weight = mirror.descendant("weight") as? UIFont.Weight ; print("TextStyleProvider weight: \(String(describing: weight))")
         let uiStyle = UIFont.preferredFontStyle(from: style)
         return TextStyleProvider(style: uiStyle, design: design , weight: weight)
         

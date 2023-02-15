@@ -23,7 +23,6 @@ struct TextView: UIViewRepresentable {
         
         uiView.delegate = context.coordinator
         uiView.attributedText = attributedText.nsAttributedString
-        //attributedText = AttributedString(uiView.attributedText)
         return uiView
     }
     
@@ -45,7 +44,7 @@ struct TextView: UIViewRepresentable {
         
         func textViewDidChange(_ textView: UITextView) {
             print("textViewDidChange")
-            self.text.wrappedValue = AttributedString(textView.attributedText ?? NSAttributedString(""))
+            self.text.wrappedValue = AttributedString(textView.attributedText ?? NSAttributedString("")).setup()
         }
     }
 }
