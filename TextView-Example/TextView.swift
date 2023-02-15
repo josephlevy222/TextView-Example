@@ -44,7 +44,7 @@ struct TextView: UIViewRepresentable {
         
         func textViewDidChange(_ textView: UITextView) {
             print("textViewDidChange")
-            self.text.wrappedValue = AttributedString(textView.attributedText ?? NSAttributedString("")).setup()
+            self.text.wrappedValue = AttributedString(textView.attributedText ?? NSAttributedString("")).resetFonts()
         }
     }
 }

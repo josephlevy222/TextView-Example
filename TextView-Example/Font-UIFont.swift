@@ -113,12 +113,7 @@ extension AttributedString {
         a.font = to
         return a
     }
-    //    func withWeight(_ weight: UIFont.Weight) -> UIFont {
-    //        let newDescriptor = fontDescriptor.addingAttributes([.traits: [
-    //            UIFontDescriptor.TraitKey.weight: weight]
-    //                                                            ])
-    //        return UIFont(descriptor: newDescriptor, size: pointSize)
-    //    }
+    
     func setBold() -> AttributedString {
         var newAS = self
         for run in runs {
@@ -143,28 +138,23 @@ extension AttributedString {
         return newAS
     }
     
-    func setup() -> AttributedString {
+    func resetFonts() -> AttributedString {
         var newAS = self
         for run in runs {
             if let font = run.font { newAS[run.range].font = font }
             else {
-                let attributes = run.attributes
+                let ctFont = run.attributes.font ?? UIFont.preferredFont(forTextStyle: .body)
+                let weight = ctFont.weight
+                let width = ctFont.width
                 let attributesDescription = run.attributes.description
-                if attributesDescription.contains("NSFont") {
-                    let ctFont = attributes.font ?? UIFont.preferredFont(forTextStyle: .body) //as CTFont
-                    let weight = ctFont.weight
-                    print("NSFont detected in setup") // Have to change it to bold
-                    if  let r1 = attributesDescription.range(of: "font-family: \""),
-                        let r2 = attributesDescription.range(of: "\"",
-                                                             range: r1.upperBound..<attributesDescription.endIndex) {
-                        let styleString = attributesDescription[r1.upperBound..<r2.lowerBound]
-                        let style = UIFont.TextStyle(rawValue: String(styleString))
-                        //let weight = style
-                        //print("style: ", style)
-                        let uiFont = UIFont.preferredFont(forTextStyle: style).withWeight(weight)
-                        newAS[run.range].font = uiFont
-                    }
-               }
+                if  let r1 = attributesDescription.range(of: "font-family: \""),
+                    let r2 = attributesDescription.range(of: "\"",
+                                                         range: r1.upperBound..<attributesDescription.endIndex) {
+                    let styleString = attributesDescription[r1.upperBound..<r2.lowerBound]
+                    let style = UIFont.TextStyle(rawValue: String(styleString))
+                    let uiFont = UIFont.preferredFont(forTextStyle: style).withWeight(weight).withWidth(width)
+                    newAS[run.range].font = uiFont
+                }
             }
         }
         return newAS
@@ -200,14 +190,14 @@ extension UIFont {
     func bold() -> UIFont? {
         guard let newDescriptor = fontDescriptor.withSymbolicTraits(fontDescriptor.symbolicTraits.union(.traitBold))
         else { return nil }
-        return UIFont(descriptor: newDescriptor, size: pointSize)
+        return UIFont(descriptor: newDescriptor, size: pointSize).withWidth(width)
     }
     
     // Add italic trait
     func italic() -> UIFont? {
         guard let newDescriptor = fontDescriptor.withSymbolicTraits(fontDescriptor.symbolicTraits.union(.traitItalic))
         else { return nil }
-        return UIFont(descriptor: newDescriptor, size: pointSize).withWeight(weight)
+        return UIFont(descriptor: newDescriptor, size: pointSize).withWeight(weight).withWidth(width)
     }
     
     func withWeight(_ weight: UIFont.Weight?) -> UIFont {
