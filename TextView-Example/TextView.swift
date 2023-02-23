@@ -8,17 +8,17 @@
 import SwiftUI
 
 struct TextView: UIViewRepresentable {
-    @Binding var attributedText: AttributedString 
+    @Binding var attributedText: AttributedString
     @State var allowsEditingTextAttributes: Bool = false
     
-    let defaultFont = UIFont.preferredFont(from: .body ) // as CTFont
+    let defaultFont = UIFont.preferredFont(from: .body)
     
     func makeUIView(context: Context) -> UITextView {
-        let uiView = UITextView()
+        let uiView = MyTextView()
         uiView.font = defaultFont
         uiView.typingAttributes = [.font : defaultFont ]
         uiView.allowsEditingTextAttributes = allowsEditingTextAttributes
-        uiView.editMenu(for: .init(), suggestedActions: [] )
+        //uiView.editMenu(for: .init(), suggestedActions: [] )
         uiView.contentInset = UIEdgeInsets()
         
         uiView.delegate = context.coordinator
@@ -27,7 +27,6 @@ struct TextView: UIViewRepresentable {
     }
     
     func updateUIView(_ uiView: UITextView, context: Context) {
-        print("updateUIView")
         uiView.attributedText = attributedText.nsAttributedString
     }
     
@@ -43,53 +42,56 @@ struct TextView: UIViewRepresentable {
         }
         
         func textViewDidChange(_ textView: UITextView) {
-            print("textViewDidChange")
-            self.text.wrappedValue = AttributedString(textView.attributedText ?? NSAttributedString("")).resetFonts()
+            if let newValue = textView.attributedText {
+                print("update",newValue)
+                self.text.wrappedValue = { do { return try AttributedString(newValue, including: \.uiKit) }
+                    catch { return AttributedString(newValue)}}().resetFonts()
+            }
         }
+    }
+    
+    class MyTextView: UITextView {
+        
+        override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
+            // - (UIMenu *)textView:(UITextView *)textView editMenuForTextInRange:(NSRange)range suggestedActions:(NSArray<UIMenuElement *> *)suggestedActions  API_AVAILABLE(ios(16.0)) {
+            //     return [UIMenu menuWithChildren:@[]];
+            
+            let menuController = UIMenuController.shared
+            if var menuItems = menuController.menuItems,
+               (menuItems.map { $0.action })
+                .elementsEqual([.toggleBoldface, .toggleItalics, .toggleUnderline]) {
+                // The font style menu is about to become visible
+                // Add a new menu item for strikethrough style
+                
+                //let editMenuInteraction = UIEditMenuInteraction(delegate: UIMenu) //UIEditMenuInteractionDelegate())
+                menuItems.append(UIMenuItem(title: "Strikethrough", action: .toggleStrikethrough))
+                // UIMenuItem is Deprecated use UIEditMenuIteraction instead
+                menuController.menuItems = menuItems
+            }
+            return super.canPerformAction(action, withSender: sender)
+        }
+        
+        @objc func toggleStrikethrough(_ sender: Any?) {
+            //let controller = sender as? UIMenuController
+            print("Strikethrough button was pressed")
+            var longestEffectiveRange = NSRange()
+            let attributedString = NSMutableAttributedString(attributedString: attributedText)
+            let value = attributedString.attribute(.strikethroughStyle,
+                                                   at: selectedRange.lowerBound,
+                                                   longestEffectiveRange: &longestEffectiveRange ,
+                                                   in: selectedRange) as? NSNumber
+            if  value != nil && selectedRange == longestEffectiveRange { attributedString.removeAttribute(.strikethroughStyle, range: selectedRange)}
+            else { attributedString.addAttribute(.strikethroughStyle, value: 2, range: selectedRange ) }
+            attributedText = attributedString
+            if let update = self.delegate?.textViewDidChange { update(self) }
+        }
+        
     }
 }
+    fileprivate extension Selector {
+        static let toggleBoldface = #selector(TextView.MyTextView.toggleBoldface(_:))
+        static let toggleItalics = #selector(TextView.MyTextView.toggleItalics(_:))
+        static let toggleUnderline = #selector(TextView.MyTextView.toggleUnderline(_:))
+        static let toggleStrikethrough = #selector(TextView.MyTextView.toggleStrikethrough(_:))
+    }
 
-
-struct UTextView: UIViewRepresentable {
-    
-    @Binding var attributedText: NSAttributedString
-    var change: Bool = false
-    @State var allowsEditingTextAttributes: Bool = false
-    
-    let defaultFont = UIFont.preferredFont(from: .body ) // as CTFont
-    
-    func makeUIView(context: Context) -> UITextView {
-        let uiView = UITextView()
-        uiView.font = defaultFont
-        uiView.typingAttributes = [.font : defaultFont ]
-        uiView.allowsEditingTextAttributes = allowsEditingTextAttributes
-        uiView.editMenu(for: .init(), suggestedActions: [] )
-        uiView.contentInset = UIEdgeInsets()
-        
-        uiView.delegate = context.coordinator
-        uiView.attributedText = attributedText//.nsAttributedString
-        
-        return uiView
-    }
-    
-    func updateUIView(_ uiView: UITextView, context: Context) {
-        print("updateUIView")
-        uiView.attributedText = attributedText//.nsAttributedString
-    }
-    
-    func makeCoordinator() -> UTextView.Coordinator {
-        Coordinator($attributedText)
-    }
-    
-    class Coordinator: NSObject, UITextViewDelegate {
-        var text: Binding<NSAttributedString>
-        
-        init(_ text: Binding<NSAttributedString>) {
-            self.text = text
-        }
-        
-        func textViewDidChange(_ textView: UITextView) {
-            self.text.wrappedValue = /*AttributedString*/(textView.attributedText ?? NSAttributedString(""))
-        }
-    }
-}
