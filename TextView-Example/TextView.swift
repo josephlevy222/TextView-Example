@@ -53,19 +53,16 @@ struct TextView: UIViewRepresentable {
     class MyTextView: UITextView {
         
         override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
-            // - (UIMenu *)textView:(UITextView *)textView editMenuForTextInRange:(NSRange)range suggestedActions:(NSArray<UIMenuElement *> *)suggestedActions  API_AVAILABLE(ios(16.0)) {
-            //     return [UIMenu menuWithChildren:@[]];
-            
             let menuController = UIMenuController.shared
             if var menuItems = menuController.menuItems,
                (menuItems.map { $0.action })
                 .elementsEqual([.toggleBoldface, .toggleItalics, .toggleUnderline]) {
                 // The font style menu is about to become visible
                 // Add a new menu item for strikethrough style
-                
+                // iOS 16 must use
                 //let editMenuInteraction = UIEditMenuInteraction(delegate: UIMenu) //UIEditMenuInteractionDelegate())
                 menuItems.append(UIMenuItem(title: "Strikethrough", action: .toggleStrikethrough))
-                // UIMenuItem is Deprecated use UIEditMenuIteraction instead
+                // UIMenuItem is Deprecated in iOS 16 use UIEditMenuIteraction instead (?)
                 menuController.menuItems = menuItems
             }
             return super.canPerformAction(action, withSender: sender)
@@ -73,15 +70,20 @@ struct TextView: UIViewRepresentable {
         
         @objc func toggleStrikethrough(_ sender: Any?) {
             //let controller = sender as? UIMenuController
-            print("Strikethrough button was pressed")
-            var longestEffectiveRange = NSRange()
             let attributedString = NSMutableAttributedString(attributedString: attributedText)
-            let value = attributedString.attribute(.strikethroughStyle,
-                                                   at: selectedRange.lowerBound,
-                                                   longestEffectiveRange: &longestEffectiveRange ,
-                                                   in: selectedRange) as? NSNumber
-            if  value != nil && selectedRange == longestEffectiveRange { attributedString.removeAttribute(.strikethroughStyle, range: selectedRange)}
-            else { attributedString.addAttribute(.strikethroughStyle, value: 2, range: selectedRange ) }
+            var isAllStrikethrough = true
+            attributedString.enumerateAttribute(.strikethroughStyle, in: selectedRange, options: []) {(value, range, stopFlag) in
+                let strikethrough = value as? NSNumber
+                if strikethrough == nil {
+                    isAllStrikethrough = false
+                    stopFlag.pointee = true
+                }
+            }
+            if isAllStrikethrough {
+                attributedString.removeAttribute(.strikethroughStyle, range: selectedRange)
+            } else {
+                attributedString.addAttribute(.strikethroughStyle, value: 2, range: selectedRange)
+            }
             attributedText = attributedString
             if let update = self.delegate?.textViewDidChange { update(self) }
         }
@@ -94,6 +96,7 @@ struct TextView: UIViewRepresentable {
                 if let descriptor = uiFont?.fontDescriptor {
                     let isBold = descriptor.symbolicTraits.intersection(.traitBold) == .traitBold
                     isAllBold = isAllBold && isBold
+                    if !isBold { stopFlag.pointee = true }
                     print("Boldfacing - Bold: \(isBold), AllBold: \(isAllBold)")
                 }
             }

@@ -134,43 +134,37 @@ extension AttributedString {
                 let weight = uiFont.weight
                 let width = uiFont.width
                 newAS[run.range].font = uiFont.italic()
-                let description = run.attributes.description
-                let styleString = extractValue(from: description, after: "font-family: \"", until: "\"")
+                // Fix Title0 bug
+                let styleString = uiFont.fontDescriptor.object(forKey: .textStyle) as? String
                 let largeTitle = styleString?.contains("Title0")
-                if largeTitle == true, let fontStyle = extractValue(from: description, after: "font-style: ", until: ";") {
-                    if fontStyle == "italic" {  print("setItalic of Title0")
-                        let style = UIFont.TextStyle(rawValue: styleString ?? "UICTFontTextStyleBody")
-                        let uiFont = UIFont.preferredFont(forTextStyle: style).withWeight(weight).withWidth(width).italic()
-                        if uiFont == nil { print("Title0 returned nil in italic") }
-                        newAS[run.range].font = uiFont
-                        continue
-                    }
+                if  largeTitle == true && uiFont.fontDescriptor.symbolicTraits.intersection(.traitItalic) == .traitItalic {
+                    let style = UIFont.TextStyle(rawValue: styleString ?? "UICTFontTextStyleBody")
+                    let uiFont = UIFont.preferredFont(forTextStyle: style).withWeight(weight).withWidth(width).italic()
+                    newAS[run.range].font = uiFont
                 }
-                
             }
         }
         return newAS
     }
     
-    func extractValue(from: String, after: String, until: String) -> String? {
-        if let r1 = from.range(of: after), let r2 = from.range(of: until, range: r1.upperBound..<from.endIndex) {
-            return String(from[r1.upperBound..<r2.lowerBound])
-        } else { return nil }
-    }
+//    func extractValue(from: String, after: String, until: String) -> String? {
+//        if let r1 = from.range(of: after), let r2 = from.range(of: until, range: r1.upperBound..<from.endIndex) {
+//            return String(from[r1.upperBound..<r2.lowerBound])
+//        } else { return nil }
+//    }
     
     func extractUIFont(attributes: AttributeContainer) -> UIFont?  {
-        let uiFont = attributes.font ?? UIFont()
+        guard attributes.font != nil else { print("SwiftUI Font"); return nil}
+        let uiFont = attributes.font ?? UIFont() // Why does this work
         let weight = uiFont.weight
         let width = uiFont.width
         let size = uiFont.pointSize
         let description = attributes.description
-        if  let styleString = extractValue(from: description, after: "font-family: \"", until: "\"") {
+        if  let styleString = uiFont.fontDescriptor.object(forKey: .textStyle) as? String {
             if styleString.contains("Title0") {
-                if  let fontStyle = extractValue(from: description, after: "font-style: ", until: ";") {
-                    if fontStyle == "italic" {
-                        let descriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: UIFont.TextStyle(rawValue: styleString))
-                        return UIFont(descriptor: descriptor.withWeight(weight).withWidth(width), size: size).italic()
-                    }
+                if  uiFont.fontDescriptor.symbolicTraits.intersection(.traitItalic) == .traitItalic {
+                    let descriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: UIFont.TextStyle(rawValue: styleString))
+                    return UIFont(descriptor: descriptor.withWeight(weight).withWidth(width), size: size).italic()
                 }
             }
             let style = UIFont.TextStyle(rawValue: styleString)
@@ -179,7 +173,7 @@ extension AttributedString {
         }
         return uiFont
     }
-    
+
     func resetFonts() -> AttributedString {
         var newAS = self
         for run in runs {
@@ -192,10 +186,10 @@ extension AttributedString {
 //            let mirror = Mirror(reflecting: run.attributes)
 //            print(mirror)
             //print("Attributes", run.attributes.font, "\n", newAS[run.range]); dump(run.attributes)
-            newAS[run.range].foregroundColor =  run.attributes.description.contains("NSColor") ?  run.attributes.foregroundColor ?? UIColor() : nil
+            //newAS[run.range].foregroundColor =  run.attributes.description.contains("NSColor") ?  run.attributes.foregroundColor ?? UIColor() : nil
 //            newAS[run.range].backgroundColor = run.attributes.backgroundColor
             //newAS[run.range].strikethroughStyle =
-            if let s = run.strikethroughStyle { print("strikethrough: \(s)")}
+           // if let s = run.strikethroughStyle { print("strikethrough: \(s)")}
 //            newAS[run.range].underlineStyle = run.attributes.underlineStyle
 //            newAS[run.range].kern = run.attributes.kern
 //            newAS[run.range].tracking = run.attributes.tracking
