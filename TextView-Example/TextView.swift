@@ -86,12 +86,37 @@ struct TextView: UIViewRepresentable {
             if let update = self.delegate?.textViewDidChange { update(self) }
         }
         
+        @objc override func toggleBoldface(_ sender: Any?) {
+            let attributedString = NSMutableAttributedString(attributedString: attributedText)
+            var isAllBold = true
+            attributedString.enumerateAttribute(.font, in: selectedRange, options: []) {(value, range, stopFlag) in
+                let uiFont = value as? UIFont
+                if let descriptor = uiFont?.fontDescriptor {
+                    let isBold = descriptor.symbolicTraits.intersection(.traitBold) == .traitBold
+                    isAllBold = isAllBold && isBold
+                    print("Boldfacing - Bold: \(isBold), AllBold: \(isAllBold)")
+                }
+            }
+            attributedString.enumerateAttribute(.font, in: selectedRange, options: [.reverse]) {(value, range, stopFlag) in
+                let uiFont = value as? UIFont
+                if  let descriptor = uiFont?.fontDescriptor {
+                    if let fontDescriptor = isAllBold ? descriptor.withSymbolicTraits(descriptor.symbolicTraits.subtracting(.traitBold))
+                        : descriptor.withSymbolicTraits(descriptor.symbolicTraits.union(.traitBold)) {
+                        attributedString.addAttribute(.font, value: UIFont(descriptor: fontDescriptor, size: descriptor.pointSize), range: range)
+                    }
+                }
+            }
+            attributedText = attributedString
+            super.toggleBoldface(sender)
+        }
     }
 }
-    fileprivate extension Selector {
-        static let toggleBoldface = #selector(TextView.MyTextView.toggleBoldface(_:))
-        static let toggleItalics = #selector(TextView.MyTextView.toggleItalics(_:))
-        static let toggleUnderline = #selector(TextView.MyTextView.toggleUnderline(_:))
-        static let toggleStrikethrough = #selector(TextView.MyTextView.toggleStrikethrough(_:))
-    }
+
+fileprivate extension Selector {
+    static let toggleBoldface = #selector(TextView.MyTextView.toggleBoldface(_:))
+    static let toggleItalics = #selector(TextView.MyTextView.toggleItalics(_:))
+    static let toggleUnderline = #selector(TextView.MyTextView.toggleUnderline(_:))
+    static let toggleStrikethrough = #selector(TextView.MyTextView.toggleStrikethrough(_:))
+}
+
 
