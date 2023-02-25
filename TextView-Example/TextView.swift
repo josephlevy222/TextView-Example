@@ -42,14 +42,31 @@ struct TextView: UIViewRepresentable {
         }
         
         func textViewDidChange(_ textView: UITextView) {
-            if let newValue = textView.attributedText {
-                print("update",newValue)
-                self.text.wrappedValue = { do { return try AttributedString(newValue, including: \.uiKit) }
-                    catch { return AttributedString(newValue)}}().resetFonts()
-            }
+            let oldValue = textView.attributedText ?? NSAttributedString()
+            let newValue = NSMutableAttributedString(attributedString: oldValue)
+            print("update",newValue)
+            let newAS = { do { return try AttributedString(oldValue, including: \.uiKit) }
+                catch { return AttributedString(oldValue)}}().resetFonts()
+            self.text.wrappedValue = {
+                var aString = AttributedString()
+                newValue.enumerateAttributes(in: NSRange(location: 0, length: newValue.length)) { (attributes, range, stopFlag) in
+                    var newRun = AttributedString()
+                    if let indexRange = Range(range, in: newAS) {
+                        newRun = AttributedString(newAS[indexRange])//,  including: \.uiKit)
+                        let keys = attributes.map { $0.key }
+                        if keys.contains(.strikethroughStyle) {
+                            newRun.strikethroughStyle = Text.LineStyle(pattern: .solid, color: nil)
+                       }
+          
+                    }
+                    aString.append(newRun)
+                }
+                return aString.resetFonts()
+            }()
+            textView.attributedText = self.text.wrappedValue.nsAttributedString
         }
-    }
-    
+}
+
     class MyTextView: UITextView {
         
         override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {

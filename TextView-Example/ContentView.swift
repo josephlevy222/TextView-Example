@@ -13,6 +13,7 @@ let aText: AttributedString = AttributedString("Big").setFont(to: .largeTitle).s
 struct ContentView: View {
     
     @State var text : AttributedString
+    { didSet {  nsText = NSAttributedString(text) } }
     @State var nsText: NSAttributedString
     var body: some View {
         VStack(alignment: .leading) {
@@ -20,7 +21,7 @@ struct ContentView: View {
                 .imageScale(.large)
                 .foregroundColor(.accentColor)
             Text(text).padding(4)
-    
+            
             TextView(attributedText: $text, allowsEditingTextAttributes: true).frame(height: 100)
             //UTextView(attributedText: $nsText, allowsEditingTextAttributes: true).frame(height: 100)
             Button("Change Text") {

@@ -29,34 +29,39 @@ extension AttributedString {
         for run in runs {
             let nsRange = NSRange(run.range, in: self[run.range])
             // Handle font  /// A property for accessing a font attribute.
-            let isNSFont = run.attributes.description.contains("NSFont")
+            let isNSFont = run.font == nil
             if !isNSFont {
                 if let uiFont = resolveFont(run.font ?? .body)?.font(with: traitCollection) {
                     nsAttributes[.font] = uiFont
                 }
             }
+            let nsRunAttributes = NSAttributedString(AttributedString(self[run.range])).attributes(at: 0, effectiveRange: nil)
+            let keys = nsRunAttributes.map { $0.key }
+//            if keys.contains(.strikethroughStyle) { print("NSAttributes in convert: , \(nsRunAttributes)")}
+//            if run.attributes.strikethroughStyle != nil { print("Attributes in convert: , \(run.attributes)")}
+            let isNSFont1 = false
             // Handle other SwiftUIAttributes
             // foregroundColor /// A property for accessing a foreground color attribute.
             if let color = run.foregroundColor { nsAttributes[.foregroundColor] = UIColor(color) }
-            else { if !isNSFont { nsAttributes.removeValue(forKey:.foregroundColor) }}
+            else { nsAttributes.removeValue(forKey:.foregroundColor) }
             // backgroundColor /// A property for accessing a background color attribute.
             if let color = run.backgroundColor {  nsAttributes[.backgroundColor] = UIColor(color) }
-            else { if !isNSFont { nsAttributes.removeValue(forKey: .backgroundColor) }}
+            else { nsAttributes.removeValue(forKey: .backgroundColor) }
             // strikethrough /// A property for accessing a strikethrough style attribute.
-            if let strikethroughStyle = run.strikethroughStyle { nsAttributes[.strikethroughStyle] = strikethroughStyle }
-            else { if !isNSFont { nsAttributes.removeValue(forKey: .strikethroughStyle) }}
+            if let strikethroughStyle = run.strikethroughStyle { if !keys.contains(.strikethroughStyle) { nsAttributes[.strikethroughStyle] = strikethroughStyle }
+                else {  nsAttributes.removeValue(forKey: .strikethroughStyle) }}
             // underlineStyle /// A property for accessing an underline style attribute.
             if let underlineStyle = run.underlineStyle { nsAttributes[.underlineStyle] = underlineStyle }
-            else { if !isNSFont { nsAttributes.removeValue(forKey: .underlineStyle) }}
+            else {  nsAttributes.removeValue(forKey: .underlineStyle) }
             // kern /// A property for accessing a kerning attribute.
             if let kern = run.kern { nsAttributes[.kern] = kern }
-            else { if !isNSFont { nsAttributes.removeValue(forKey: .kern) }}
+            else { nsAttributes.removeValue(forKey: .kern) }
             // tracking /// A property for accessing a tracking attribute.
             if  let tracking = run.tracking { nsAttributes[.tracking] = tracking }
-            else { if !isNSFont { nsAttributes.removeValue(forKey: .tracking) }}
+            else {  nsAttributes.removeValue(forKey: .tracking) }
             // baselineOffset /// A property for accessing a baseline offset attribute.
             if let baselineOffset = run.baselineOffset { nsAttributes[.baselineOffset] = baselineOffset }
-            else { if !isNSFont { nsAttributes.removeValue(forKey: .baselineOffset) }}
+            else {  nsAttributes.removeValue(forKey: .baselineOffset) }
             if !nsAttributes.isEmpty {
                 nsAttributedString.setAttributes(nsAttributes, range: nsRange)
             }
@@ -117,7 +122,7 @@ extension AttributedString {
         for run in runs {
             if let font = run.font { newAS[run.range].font = font.bold() }
             else { // assume NSFont
-                let uiFont = run.attributes.font ?? UIFont.preferredFont(forTextStyle: .body)
+                let uiFont = run.attributes.font ?? UIFont()
                 newAS[run.range].font = uiFont.bold()
             }
         }
@@ -129,8 +134,7 @@ extension AttributedString {
         for run in runs {
             if let font = run.font { newAS[run.range].font = font.italic() }
             else { // assume NSFont
-                let uiFont = run.attributes.font ?? UIFont()
-                
+                let uiFont = run.font ?? UIFont()
                 let weight = uiFont.weight
                 let width = uiFont.width
                 newAS[run.range].font = uiFont.italic()
@@ -138,7 +142,7 @@ extension AttributedString {
                 let styleString = uiFont.fontDescriptor.object(forKey: .textStyle) as? String
                 let largeTitle = styleString?.contains("Title0")
                 if  largeTitle == true && uiFont.fontDescriptor.symbolicTraits.intersection(.traitItalic) == .traitItalic {
-                    let style = UIFont.TextStyle(rawValue: styleString ?? "UICTFontTextStyleBody")
+                    let style = UIFont.TextStyle(rawValue: styleString ?? "UICTFontTextStyleTitle0")
                     let uiFont = UIFont.preferredFont(forTextStyle: style).withWeight(weight).withWidth(width).italic()
                     newAS[run.range].font = uiFont
                 }
@@ -154,12 +158,10 @@ extension AttributedString {
 //    }
     
     func extractUIFont(attributes: AttributeContainer) -> UIFont?  {
-        guard attributes.font != nil else { print("SwiftUI Font"); return nil}
         let uiFont = attributes.font ?? UIFont() // Why does this work
         let weight = uiFont.weight
         let width = uiFont.width
         let size = uiFont.pointSize
-        let description = attributes.description
         if  let styleString = uiFont.fontDescriptor.object(forKey: .textStyle) as? String {
             if styleString.contains("Title0") {
                 if  uiFont.fontDescriptor.symbolicTraits.intersection(.traitItalic) == .traitItalic {
@@ -177,19 +179,16 @@ extension AttributedString {
     func resetFonts() -> AttributedString {
         var newAS = self
         for run in runs {
-            if run.font != nil { continue } //newAS[run.range].font = font }
-            else {
+            if run.font == nil {
+                // Cast the run to NSAttributedString and get attributes
                 newAS[run.range].font = extractUIFont(attributes: run.attributes)
             }
             //Handle other attributes
-            typealias NSAttributeContainer = [NSAttributedString.Key : Any ]
-//            let mirror = Mirror(reflecting: run.attributes)
-//            print(mirror)
-            //print("Attributes", run.attributes.font, "\n", newAS[run.range]); dump(run.attributes)
-            //newAS[run.range].foregroundColor =  run.attributes.description.contains("NSColor") ?  run.attributes.foregroundColor ?? UIColor() : nil
+            //typealias NSAttributeContainer = [NSAttributedString.Key : Any ]
+            
+//            newAS[run.range].foregroundColor = run.attributes.foregroundColor
 //            newAS[run.range].backgroundColor = run.attributes.backgroundColor
-            //newAS[run.range].strikethroughStyle =
-           // if let s = run.strikethroughStyle { print("strikethrough: \(s)")}
+//            newAS[run.range].strikethroughStyle =  run.strikethroughStyle 
 //            newAS[run.range].underlineStyle = run.attributes.underlineStyle
 //            newAS[run.range].kern = run.attributes.kern
 //            newAS[run.range].tracking = run.attributes.tracking
