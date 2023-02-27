@@ -18,9 +18,8 @@ struct TextView: UIViewRepresentable {
         uiView.font = defaultFont
         uiView.typingAttributes = [.font : defaultFont ]
         uiView.allowsEditingTextAttributes = allowsEditingTextAttributes
-        //uiView.editMenu(for: .init(), suggestedActions: [] )
+        //uiView.editMenu(for: .init(), suggestedActions: [] ) //iOS 16 only
         uiView.contentInset = UIEdgeInsets()
-        
         uiView.delegate = context.coordinator
         uiView.attributedText = attributedText.nsAttributedString
         return uiView
@@ -52,12 +51,10 @@ struct TextView: UIViewRepresentable {
                 newValue.enumerateAttributes(in: NSRange(location: 0, length: newValue.length)) { (attributes, range, stopFlag) in
                     var newRun = AttributedString()
                     if let indexRange = Range(range, in: newAS) {
-                        newRun = AttributedString(newAS[indexRange])//,  including: \.uiKit)
-                        let keys = attributes.map { $0.key }
-                        if keys.contains(.strikethroughStyle) {
-                            newRun.strikethroughStyle = Text.LineStyle(pattern: .solid, color: nil)
+                        newRun = AttributedString(newAS[indexRange])
+                        if let strikethroughStyle = attributes[.strikethroughStyle] {
+                            newRun.strikethroughStyle = strikethroughStyle as? Text.LineStyle ?? .init(pattern: .solid, color: nil)
                        }
-          
                     }
                     aString.append(newRun)
                 }
@@ -99,7 +96,7 @@ struct TextView: UIViewRepresentable {
             if isAllStrikethrough {
                 attributedString.removeAttribute(.strikethroughStyle, range: selectedRange)
             } else {
-                attributedString.addAttribute(.strikethroughStyle, value: 2, range: selectedRange)
+                attributedString.addAttribute(.strikethroughStyle, value: 1, range: selectedRange)
             }
             attributedText = attributedString
             if let update = self.delegate?.textViewDidChange { update(self) }
@@ -114,7 +111,6 @@ struct TextView: UIViewRepresentable {
                     let isBold = descriptor.symbolicTraits.intersection(.traitBold) == .traitBold
                     isAllBold = isAllBold && isBold
                     if !isBold { stopFlag.pointee = true }
-                    print("Boldfacing - Bold: \(isBold), AllBold: \(isAllBold)")
                 }
             }
             attributedString.enumerateAttribute(.font, in: selectedRange, options: [.reverse]) {(value, range, stopFlag) in
@@ -127,7 +123,7 @@ struct TextView: UIViewRepresentable {
                 }
             }
             attributedText = attributedString
-            super.toggleBoldface(sender)
+            if let update = self.delegate?.textViewDidChange { update(self) }
         }
     }
 }
