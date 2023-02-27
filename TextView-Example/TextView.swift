@@ -54,7 +54,7 @@ struct TextView: UIViewRepresentable {
                         newRun = AttributedString(newAS[indexRange])
                         if let strikethroughStyle = attributes[.strikethroughStyle] {
                             newRun.strikethroughStyle = strikethroughStyle as? Text.LineStyle ?? .init(pattern: .solid, color: nil)
-                       }
+                        }
                     }
                     aString.append(newRun)
                 }
@@ -62,7 +62,7 @@ struct TextView: UIViewRepresentable {
             }()
             textView.attributedText = self.text.wrappedValue.nsAttributedString
         }
-}
+    }
 
     class MyTextView: UITextView {
         
