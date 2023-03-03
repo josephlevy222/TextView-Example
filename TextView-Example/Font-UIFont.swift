@@ -33,10 +33,13 @@ extension AttributedString {
             
             var nsAttributes = [NSAttributedString.Key : Any ]() // empty dictionary
             // Handle font  /// A property for accessing a font attribute.
-            if run.font != nil {
-                if let uiFont = resolveFont(run.font ?? .body)?.font(with: traitCollection) {
+            if let font = run.font { // SwiftUI Font
+                if let uiFont = resolveFont(font)?.font(with: traitCollection) {
                     nsAttributes[.font] = uiFont // add font
-                } // else { /* do nothing */ }
+                }  else { // UIFont or default
+                    if nsAttributes[.font] == nil {
+                        nsAttributes[.font] = UIFont.preferredFont(forTextStyle: .body, compatibleWith: traitCollection)}
+                }
             }
             
             // Handle other SwiftUIAttributes
@@ -51,10 +54,13 @@ extension AttributedString {
                 if nsRunAttributes[.strikethroughStyle] == nil {
                     nsAttributes[.strikethroughStyle] = strikethroughStyle
                 }
-            } else {  nsAttributes.removeValue(forKey: .strikethroughStyle) }
+            } else { nsAttributes.removeValue(forKey: .strikethroughStyle) }
             // underlineStyle /// A property for accessing an underline style attribute.
-            if let underlineStyle = run.underlineStyle { nsAttributes[.underlineStyle] = underlineStyle }
-            else {  nsAttributes.removeValue(forKey: .underlineStyle) }
+            if let underlineStyle = run.underlineStyle {
+                if nsRunAttributes[.underlineStyle] == nil {
+                    nsAttributes[.underlineStyle] =  underlineStyle
+                }
+            } else { nsAttributes.removeValue(forKey: .underlineStyle) }
             // kern /// A property for accessing a kerning attribute.
             if let kern = run.kern { nsAttributes[.kern] = kern }
             else { nsAttributes.removeValue(forKey: .kern) }
@@ -119,7 +125,7 @@ extension AttributedString {
         return a
     }
     
-    func uiFontOfSubstring(_ run: AttributedSubstring) -> UIFont {
+    private func uiFontOfSubstring(_ run: AttributedSubstring) -> UIFont {
         NSAttributedString(AttributedString(run))
             .attributes(at: 0, effectiveRange: nil)[.font] as? UIFont ?? UIFont()
     }
@@ -129,7 +135,7 @@ extension AttributedString {
             if let font = run.font { newAS[run.range].font = font.bold() }
             else { // assume NSFont
                 let uiFont = uiFontOfSubstring(self[run.range])
-                newAS[run.range].font = uiFont.bold()
+                newAS[run.range].font = (uiFont.bold())
             }
         }
         return newAS
@@ -140,47 +146,21 @@ extension AttributedString {
         for run in runs {
             if let font = run.font { newAS[run.range].font = font.italic() }
             else { // assume NSFont
-                let uiFont = uiFontOfSubstring(self[run.range])
-                //run.font ?? UIFont() // works but is not understood
-                let weight = uiFont.weight
-                let width = uiFont.width
-                newAS[run.range].font = uiFont.italic()
-                // Fix Title0 bug
-                let styleString = uiFont.fontDescriptor.object(forKey: .textStyle) as? String
-                let largeTitle = styleString?.contains("Title0") ?? false
-                if  largeTitle && uiFont.fontDescriptor.symbolicTraits.intersection(.traitItalic) == .traitItalic {
-                    let style = UIFont.TextStyle(rawValue: styleString ?? "UICTFontTextStyleTitle0")
-                    let uiFont = UIFont.preferredFont(forTextStyle: style).withWeight(weight).withWidth(width).italic()
-                    newAS[run.range].font = uiFont
-                }
+                let uiFont = uiFontOfSubstring(self[run.range]).italic()
+                //  uiFont = run.font ?? UIFont() // works but is not understood
+                newAS[run.range].font = (uiFont)
             }
         }
         return newAS
     }
 
-    func resetFonts() -> AttributedString {
+    func resetFonts() -> AttributedString { // NEEDS UNDERLINE BUG FIXED in iOS 15.4
         var newAS = self
         for run in runs {
             // Cast the run to NSAttributedString and get attributes
             let uiAttributes = NSAttributedString(AttributedString(newAS[run.range])).attributes(at: 0, effectiveRange: nil)
             if let uiFont = uiAttributes[.font] as? UIFont {
-                newAS[run.range].font = {
-                    let weight = uiFont.weight
-                    let width = uiFont.width
-                    let size = uiFont.pointSize
-                    if  let styleString = uiFont.fontDescriptor.object(forKey: .textStyle) as? String {
-                        let style = UIFont.TextStyle(rawValue: styleString)
-                        // Fix Title0 (largeTitle) bug
-                        if styleString.contains("Title0") {
-                            if  uiFont.fontDescriptor.symbolicTraits.intersection(.traitItalic) == .traitItalic {
-                                let descriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: style)
-                                return UIFont(descriptor: descriptor.withWeight(weight).withWidth(width), size: size).italic()
-                            }
-                        }
-                        return UIFont.preferredFont(forTextStyle: style).withWeight(weight).withWidth(width)
-                    }
-                    return uiFont
-                }()
+                newAS[run.range].font = (uiFont)
             }
         }
         return newAS

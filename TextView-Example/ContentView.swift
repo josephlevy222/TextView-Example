@@ -20,7 +20,9 @@ struct ContentView: View {
             Image(systemName: "globe")
                 .imageScale(.large)
                 .foregroundColor(.accentColor)
-            Text(text).padding(4)
+            Text(text)
+                .textSelection(.enabled)
+                .padding(4)
             
             TextView(attributedText: $text, allowsEditingTextAttributes: true).frame(height: 100)
             //UTextView(attributedText: $nsText, allowsEditingTextAttributes: true).frame(height: 100)

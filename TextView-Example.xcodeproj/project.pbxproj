@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		3733DB6B29AD73C8000ADFCE /* AttributedTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3733DB6A29AD73C7000ADFCE /* AttributedTextView.swift */; };
+		37D480BE29B6983500B18D09 /* LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = 37D480BD29B6983500B18D09 /* LICENSE.txt */; };
 		37DB23622989CAC80021BDD0 /* TextView_ExampleApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37DB23612989CAC80021BDD0 /* TextView_ExampleApp.swift */; };
 		37DB23642989CAC80021BDD0 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37DB23632989CAC80021BDD0 /* ContentView.swift */; };
 		37DB23662989CACA0021BDD0 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 37DB23652989CACA0021BDD0 /* Assets.xcassets */; };
@@ -16,6 +18,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		3733DB6A29AD73C7000ADFCE /* AttributedTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttributedTextView.swift; sourceTree = "<group>"; };
+		37D480BD29B6983500B18D09 /* LICENSE.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = LICENSE.txt; sourceTree = "<group>"; };
 		37DB235E2989CAC80021BDD0 /* TextView-Example.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "TextView-Example.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		37DB23612989CAC80021BDD0 /* TextView_ExampleApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextView_ExampleApp.swift; sourceTree = "<group>"; };
 		37DB23632989CAC80021BDD0 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -37,9 +41,18 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		37D480BC29B6983500B18D09 /* LICENSE */ = {
+			isa = PBXGroup;
+			children = (
+				37D480BD29B6983500B18D09 /* LICENSE.txt */,
+			);
+			path = LICENSE;
+			sourceTree = "<group>";
+		};
 		37DB23552989CAC70021BDD0 = {
 			isa = PBXGroup;
 			children = (
+				3733DB6A29AD73C7000ADFCE /* AttributedTextView.swift */,
 				37DB23602989CAC80021BDD0 /* TextView-Example */,
 				37DB235F2989CAC80021BDD0 /* Products */,
 			);
@@ -63,6 +76,7 @@
 				37DB23652989CACA0021BDD0 /* Assets.xcassets */,
 				37DB23672989CACA0021BDD0 /* TextView_Example.entitlements */,
 				37DB23682989CACA0021BDD0 /* Preview Content */,
+				37D480BC29B6983500B18D09 /* LICENSE */,
 			);
 			path = "TextView-Example";
 			sourceTree = "<group>";
@@ -133,6 +147,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				37D480BE29B6983500B18D09 /* LICENSE.txt in Resources */,
 				37DB236A2989CACA0021BDD0 /* Preview Assets.xcassets in Resources */,
 				37DB23662989CACA0021BDD0 /* Assets.xcassets in Resources */,
 			);
@@ -146,6 +161,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				37DB23712989CB330021BDD0 /* TextView.swift in Sources */,
+				3733DB6B29AD73C8000ADFCE /* AttributedTextView.swift in Sources */,
 				37DB23732989CBE80021BDD0 /* Font-UIFont.swift in Sources */,
 				37DB23642989CAC80021BDD0 /* ContentView.swift in Sources */,
 				37DB23622989CAC80021BDD0 /* TextView_ExampleApp.swift in Sources */,
