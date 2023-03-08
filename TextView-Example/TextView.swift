@@ -4,6 +4,7 @@
 //
 //  Created by Joseph Levy on 1/31/23.
 //  Working for iOS 15 and 16 3/8/23
+
 import SwiftUI
 
 struct TextView: UIViewRepresentable {
@@ -12,7 +13,6 @@ struct TextView: UIViewRepresentable {
     @State var allowsEditingTextAttributes: Bool = false
     
     let defaultFont = UIFont.preferredFont(from: .body)
-    
     
     func makeUIView(context: Context) -> UITextView {
         let uiView = MyTextView()
@@ -46,7 +46,7 @@ struct TextView: UIViewRepresentable {
             let newValue = NSMutableAttributedString(attributedString: oldValue)
             //print("update",newValue)
             let newAS = { do { return try AttributedString(oldValue, including: \.uiKit) }
-                catch { return AttributedString(oldValue)}}().resetFonts()
+                catch { return AttributedString(oldValue)}}()//.resetFonts()
             self.text.wrappedValue = {
                 var aString = AttributedString()
                 newValue.enumerateAttributes(in: NSRange(location: 0,
@@ -56,12 +56,16 @@ struct TextView: UIViewRepresentable {
                         newRun = AttributedString(newAS[indexRange])
                         if let strikethroughStyle = attributes[.strikethroughStyle] {
                             newRun.strikethroughStyle =
-                            strikethroughStyle as? Text.LineStyle ?? .init(pattern: .solid, color: nil)
+                                strikethroughStyle as? Text.LineStyle ?? .init(pattern: .solid, color: nil)
+                        }
+                        if let underlineStyle = attributes[.underlineStyle] {
+                            newRun.underlineStyle =
+                                underlineStyle as? Text.LineStyle ?? .init(pattern: .solid, color: nil)
                         }
                     }
                     aString.append(newRun)
                 }
-                return aString.resetFonts()
+                return aString
             }()
             textView.attributedText = text.wrappedValue.nsAttributedString
         }
@@ -166,31 +170,26 @@ struct TextView: UIViewRepresentable {
         private func toggleSymbolicTrait(_ sender: Any?, trait: UIFontDescriptor.SymbolicTraits) {
             let attributedString = NSMutableAttributedString(attributedString: attributedText)
             var isAll = true
-            attributedString.enumerateAttribute(.font,
-                                                in: selectedRange,
+            attributedString.enumerateAttribute(.font, in: selectedRange,
                                                 options: []) { (value, range, stopFlag) in
                 let uiFont = value as? UIFont
                 if let descriptor = uiFont?.fontDescriptor {
-                    let isTrait = descriptor.symbolicTraits.intersection(trait) == trait
-                    isAll = isAll && isTrait
-                    if !isTrait { stopFlag.pointee = true }
+                    isAll = isAll && descriptor.symbolicTraits.intersection(trait) == trait
+                    if !isAll { stopFlag.pointee = true }
                 }
             }
-            attributedString.enumerateAttribute(.font,
-                                                in: selectedRange,
+            attributedString.enumerateAttribute(.font, in: selectedRange,
                                                 options: []) {(value, range, stopFlag) in
                 let uiFont = value as? UIFont
                 if  let descriptor = uiFont?.fontDescriptor {
+                    let weight = trait != .traitBold ? descriptor.weight : (isAll ? nil : .bold)
                     if let fontDescriptor = isAll ?
                         descriptor.withSymbolicTraits(descriptor.symbolicTraits.subtracting(trait))
-                        : descriptor
-                        .withSymbolicTraits(descriptor.symbolicTraits.union(trait))?
-                        .withWeight(trait == .traitBold ? .bold : nil ) {
-                        // ^ Needed to fix Title0 bug in UITextView ^
-                        attributedString
-                            .addAttribute(.font,
-                                          value: UIFont(descriptor: fontDescriptor, size: descriptor.pointSize),
-                                          range: range)
+                        : descriptor.withSymbolicTraits(descriptor.symbolicTraits.union(trait)) {
+                        attributedString.addAttribute(.font,
+                                    value: UIFont(descriptor: fontDescriptor.withWeight(weight),
+                                                        size: descriptor.pointSize),
+                                                       range: range)
                     }
                 }
             }
@@ -202,9 +201,6 @@ struct TextView: UIViewRepresentable {
             print("toggleSubscript pressed")
         }
         
-        @objc func moreItems(_ sender: Any?) {
-            print("moreItems pressed")
-        }
     }
 }
 

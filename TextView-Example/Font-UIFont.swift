@@ -58,7 +58,7 @@ extension AttributedString {
             // underlineStyle /// A property for accessing an underline style attribute.
             if let underlineStyle = run.underlineStyle {
                 if nsRunAttributes[.underlineStyle] == nil {
-                    nsAttributes[.underlineStyle] =  underlineStyle
+                    nsAttributes[.underlineStyle] =  underlineStyle 
                 }
             } else { nsAttributes.removeValue(forKey: .underlineStyle) }
             // kern /// A property for accessing a kerning attribute.
@@ -78,9 +78,9 @@ extension AttributedString {
 }
 }
 
-// AttributedString(styledMarkdown: String, fonts: [Font]) puts fonts into Headers 1-6
-// and setFont for SwiftUI.Font, along with setBold, and setItalic that work with SwiftUI.Font and UIFont
-// embedded in the attributed string
+/// AttributedString(styledMarkdown: String, fonts: [Font]) puts fonts into Headers 1-6
+/// and setFont for SwiftUI.Font, along with setBold, and setItalic that work with SwiftUI.Font and UIFont
+/// embedded in the attributed string
 fileprivate let defaultHeaderFonts: [Font] = [.body,.largeTitle,.title,.title2,.title3,.headline,.subheadline]
 
 var fontWeights: [UIFont.Weight : Font.Weight] =
@@ -148,18 +148,6 @@ extension AttributedString {
             else { // assume NSFont
                 let uiFont = uiFontOfSubstring(self[run.range]).italic()
                 //  uiFont = run.font ?? UIFont() // works but is not understood
-                newAS[run.range].font = (uiFont)
-            }
-        }
-        return newAS
-    }
-
-    func resetFonts() -> AttributedString { // NEEDS UNDERLINE BUG FIXED in iOS 15.4
-        var newAS = self
-        for run in runs {
-            // Cast the run to NSAttributedString and get attributes
-            let uiAttributes = NSAttributedString(AttributedString(newAS[run.range])).attributes(at: 0, effectiveRange: nil)
-            if let uiFont = uiAttributes[.font] as? UIFont {
                 newAS[run.range].font = (uiFont)
             }
         }
