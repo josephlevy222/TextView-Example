@@ -56,11 +56,11 @@ struct TextView: UIViewRepresentable {
                         newRun = AttributedString(newAS[indexRange])
                         if let strikethroughStyle = attributes[.strikethroughStyle] {
                             newRun.strikethroughStyle =
-                                strikethroughStyle as? Text.LineStyle ?? .init(pattern: .solid, color: nil)
+                            strikethroughStyle as? Text.LineStyle ?? .init(pattern: .solid, color: nil)
                         }
                         if let underlineStyle = attributes[.underlineStyle] {
                             newRun.underlineStyle =
-                                underlineStyle as? Text.LineStyle ?? .init(pattern: .solid, color: nil)
+                            underlineStyle as? Text.LineStyle ?? .init(pattern: .solid, color: nil)
                         }
                     }
                     aString.append(newRun)
@@ -83,9 +83,17 @@ struct TextView: UIViewRepresentable {
             let strikethroughAction = UIAction(title: "Strikethough") { action in
                 self.toggleStrikethrough(action.sender)
             }
+            let subscriptAction = UIAction(title: "Subscript") { action in
+                self.toggleSubscript(action.sender)
+            }
+            let superscriptAction = UIAction(title: "Superscript") { action in
+                self.toggleSuperscript(action.sender)
+            }
             builder.replaceChildren(ofMenu: .textStyle)  {
                 var children = $0
                 children.append(strikethroughAction)
+                children.append(subscriptAction)
+                children.append(superscriptAction)
                 return children
             }
             super.buildMenu(with: builder)
@@ -96,8 +104,10 @@ struct TextView: UIViewRepresentable {
             if #unavailable(iOS 16.0) {
                 let menuController = UIMenuController.shared
                 if var menuItems = menuController.menuItems,
-                   menuItems[0].title == "Bold" && menuItems.count < 4 {
+                   menuItems[0].title == "Bold" && menuItems.count < 5 {
                     menuItems.append(UIMenuItem(title: "Strikethrough", action: .toggleStrikethrough))
+                    menuItems.append(UIMenuItem(title: "Subscript", action: .toggleSubscript))
+                    menuItems.append(UIMenuItem(title: "Superscript", action: .toggleSuperscript))
                     menuController.menuItems = menuItems
                 }
                 // Get rid of menu item not wanted
@@ -187,9 +197,9 @@ struct TextView: UIViewRepresentable {
                         descriptor.withSymbolicTraits(descriptor.symbolicTraits.subtracting(trait))
                         : descriptor.withSymbolicTraits(descriptor.symbolicTraits.union(trait)) {
                         attributedString.addAttribute(.font,
-                                    value: UIFont(descriptor: fontDescriptor.withWeight(weight),
-                                                        size: descriptor.pointSize),
-                                                       range: range)
+                                                      value: UIFont(descriptor: fontDescriptor.withWeight(weight),
+                                                                    size: descriptor.pointSize),
+                                                      range: range)
                     }
                 }
             }
@@ -198,9 +208,70 @@ struct TextView: UIViewRepresentable {
         }
         
         @objc func toggleSubscript(_ sender: Any?) {
-            print("toggleSubscript pressed")
+            let attributedString = NSMutableAttributedString(attributedString: attributedText)
+            var isAllSubscript = true
+            attributedString.enumerateAttributes(in: selectedRange,
+                                                 options: []) { (attributes, range, stopFlag) in
+                if let offset = attributes[.baselineOffset], (offset as? CGFloat ?? 0.0) < 0.0 {
+                } else {
+                    isAllSubscript = false
+                    stopFlag.pointee = true
+                }
+            }
+            attributedString.enumerateAttributes(in: selectedRange,
+                                                 options: []) {(attributes, range, stopFlag) in
+                let descriptor: UIFontDescriptor
+                if let font = attributes[.font] as? UIFont {descriptor = font.fontDescriptor }
+                else { descriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: .body) }
+                if let offset = attributes[.baselineOffset], (offset as? CGFloat ?? 0.0) < 0.0 {
+                    if isAllSubscript {
+                        attributedString.removeAttribute(.baselineOffset, range: range)
+                        let newFont = UIFont(descriptor: descriptor, size: descriptor.pointSize/0.75)
+                        attributedString.addAttribute(.font, value: newFont, range: range)
+                    }
+                } else {
+                    attributedString.addAttribute(.baselineOffset, value: -0.3*descriptor.pointSize,
+                                                  range: range)
+                    let newFont = UIFont(descriptor: descriptor, size: 0.75*descriptor.pointSize)
+                    attributedString.addAttribute(.font, value: newFont, range: range)
+                }
+            }
+            attributedText = attributedString
+            if let update = self.delegate?.textViewDidChange { update(self) }
         }
         
+        @objc func toggleSuperscript(_ sender: Any?) {
+            let attributedString = NSMutableAttributedString(attributedString: attributedText)
+            var isAllSuperscript = true
+            attributedString.enumerateAttributes(in: selectedRange,
+                                                 options: []) { (attributes, range, stopFlag) in
+                if let offset = attributes[.baselineOffset], (offset as? CGFloat ?? 0.0) > 0.0 {
+                } else {
+                    isAllSuperscript = false
+                    stopFlag.pointee = true
+                }
+            }
+            attributedString.enumerateAttributes(in: selectedRange,
+                                                 options: []) {(attributes, range, stopFlag) in
+                let descriptor: UIFontDescriptor
+                if let font = attributes[.font] as? UIFont {descriptor = font.fontDescriptor }
+                else { descriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: .body) }
+                if let offset = attributes[.baselineOffset], (offset as? CGFloat ?? 0.0) > 0.0 {
+                    if isAllSuperscript {
+                        attributedString.removeAttribute(.baselineOffset, range: range)
+                        let newFont = UIFont(descriptor: descriptor, size: descriptor.pointSize/0.75)
+                        attributedString.addAttribute(.font, value: newFont, range: range)
+                    }
+                } else {
+                    attributedString.addAttribute(.baselineOffset, value: 0.4*descriptor.pointSize,
+                                                  range: range)
+                    let newFont = UIFont(descriptor: descriptor, size: 0.75*descriptor.pointSize)
+                    attributedString.addAttribute(.font, value: newFont, range: range)
+                }
+            }
+            attributedText = attributedString
+            if let update = self.delegate?.textViewDidChange { update(self) }
+        }
     }
 }
 
@@ -210,6 +281,7 @@ fileprivate extension Selector {
     static let toggleUnderline = #selector(TextView.MyTextView.toggleUnderline(_:))
     static let toggleStrikethrough = #selector(TextView.MyTextView.toggleStrikethrough(_:))
     static let toggleSubscript = #selector(TextView.MyTextView.toggleSubscript(_:))
+    static let toggleSuperscript = #selector(TextView.MyTextView.toggleSuperscript(_:))
 }
 
 

@@ -20,12 +20,13 @@ struct ContentView: View {
             Image(systemName: "globe")
                 .imageScale(.large)
                 .foregroundColor(.accentColor)
+  
+            TextView(attributedText: $text, allowsEditingTextAttributes: true).frame(height: 100)
+            //UTextView(attributedText: $nsText, allowsEditingTextAttributes: true).frame(height: 100)
             Text(text)
                 .textSelection(.enabled)
                 .padding(4)
-            
-            TextView(attributedText: $text, allowsEditingTextAttributes: true).frame(height: 100)
-            //UTextView(attributedText: $nsText, allowsEditingTextAttributes: true).frame(height: 100)
+              
             Button("Change Text") {
                 text = text.setItalic() }
             Spacer()
