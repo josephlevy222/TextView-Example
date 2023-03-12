@@ -31,7 +31,7 @@ extension AttributedString {
             let nsRunAttributes = NSAttributedString(AttributedString(self[run.range]))
                 .attributes(at: 0, effectiveRange: nil)
             
-            var nsAttributes = [NSAttributedString.Key : Any ]() // empty dictionary
+            var nsAttributes = nsRunAttributes //[NSAttributedString.Key : Any ]() // empty dictionary
             // Handle font  /// A property for accessing a font attribute.
             if let font = run.font { // SwiftUI Font
                 if let uiFont = resolveFont(font)?.font(with: traitCollection) {
@@ -44,32 +44,30 @@ extension AttributedString {
             
             // Handle other SwiftUIAttributes
             // foregroundColor /// A property for accessing a foreground color attribute.
-            if let color = run.foregroundColor { nsAttributes[.foregroundColor] = UIColor(color) }
-            else { nsAttributes.removeValue(forKey:.foregroundColor) }
+            if let color = run.foregroundColor, color != nsAttributes[.foregroundColor] as? Color { nsAttributes[.foregroundColor] = UIColor(color) }
+            //else { nsAttributes.removeValue(forKey:.foregroundColor) }
             // backgroundColor /// A property for accessing a background color attribute.
-            if let color = run.backgroundColor {  nsAttributes[.backgroundColor] = UIColor(color) }
-            else { nsAttributes.removeValue(forKey: .backgroundColor) }
-            // strikethrough /// A property for accessing a strikethrough style attribute. 
+            if let color = run.backgroundColor, color != nsAttributes[.backgroundColor] as? Color {  nsAttributes[.backgroundColor] = UIColor(color) }
+            //else { nsAttributes.removeValue(forKey: .backgroundColor) }
+            // strikethrough /// A property for accessing a strikethrough style attribute.
             if let strikethroughStyle = run.strikethroughStyle {
                 if nsRunAttributes[.strikethroughStyle] == nil {
                     nsAttributes[.strikethroughStyle] = strikethroughStyle
                 }
-            } else { nsAttributes.removeValue(forKey: .strikethroughStyle) }
+            } //else { nsAttributes.removeValue(forKey: .strikethroughStyle) }
             // underlineStyle /// A property for accessing an underline style attribute.
-            if let underlineStyle = run.underlineStyle {
-                if nsRunAttributes[.underlineStyle] == nil {
-                    nsAttributes[.underlineStyle] =  underlineStyle 
-                }
-            } else { nsAttributes.removeValue(forKey: .underlineStyle) }
+            if let underlineStyle = run.underlineStyle { print("underlineStyle: \(underlineStyle)  nsUnderlineStyle", nsRunAttributes[.underlineStyle] )
+                if nsAttributes[.underlineStyle] == nil { nsAttributes[.underlineStyle] =  underlineStyle }
+            } //else { nsAttributes.removeValue(forKey: .underlineStyle) }
             // kern /// A property for accessing a kerning attribute.
             if let kern = run.kern { nsAttributes[.kern] = kern }
-            else { nsAttributes.removeValue(forKey: .kern) }
+            //else { nsAttributes.removeValue(forKey: .kern) }
             // tracking /// A property for accessing a tracking attribute.
             if  let tracking = run.tracking { nsAttributes[.tracking] = tracking }
-            else {  nsAttributes.removeValue(forKey: .tracking) }
+            //else {  nsAttributes.removeValue(forKey: .tracking) }
             // baselineOffset /// A property for accessing a baseline offset attribute.
             if let baselineOffset = run.baselineOffset { nsAttributes[.baselineOffset] = baselineOffset }
-            else {  nsAttributes.removeValue(forKey: .baselineOffset) }
+            //else {  nsAttributes.removeValue(forKey: .baselineOffset) }
             if !nsAttributes.isEmpty {
                 nsAttributedString.setAttributes(nsAttributes, range: nsRange)
             }

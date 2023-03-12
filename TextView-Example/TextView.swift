@@ -17,7 +17,7 @@ struct TextView: UIViewRepresentable {
     func makeUIView(context: Context) -> UITextView {
         let uiView = MyTextView()
         uiView.font = defaultFont
-        uiView.typingAttributes = [.font : defaultFont ]
+        //uiView.typingAttributes = [.font : defaultFont ]
         uiView.allowsEditingTextAttributes = allowsEditingTextAttributes
         uiView.textContainerInset = .zero
         uiView.contentInset = UIEdgeInsets()
@@ -42,32 +42,9 @@ struct TextView: UIViewRepresentable {
         }
         
         func textViewDidChange(_ textView: UITextView) {
-            let oldValue = textView.attributedText ?? NSAttributedString()
-            let newValue = NSMutableAttributedString(attributedString: oldValue)
-            //print("update",newValue)
-            let newAS = { do { return try AttributedString(oldValue, including: \.uiKit) }
-                catch { return AttributedString(oldValue)}}()//.resetFonts()
             self.text.wrappedValue = {
-                var aString = AttributedString()
-                newValue.enumerateAttributes(in: NSRange(location: 0,
-                                                         length: newValue.length)) { (attributes, range, stopFlag) in
-                    var newRun = AttributedString()
-                    if let indexRange = Range(range, in: newAS) {
-                        newRun = AttributedString(newAS[indexRange])
-                        if let strikethroughStyle = attributes[.strikethroughStyle] {
-                            newRun.strikethroughStyle =
-                            strikethroughStyle as? Text.LineStyle ?? .init(pattern: .solid, color: nil)
-                        }
-                        if let underlineStyle = attributes[.underlineStyle] {
-                            newRun.underlineStyle =
-                            underlineStyle as? Text.LineStyle ?? .init(pattern: .solid, color: nil)
-                        }
-                    }
-                    aString.append(newRun)
-                }
-                return aString
-            }()
-            textView.attributedText = text.wrappedValue.nsAttributedString
+                do { return try AttributedString(textView.attributedText, including: \.uiKit) }
+                catch { return AttributedString(textView.attributedText)}}()
         }
     }
     
@@ -83,10 +60,10 @@ struct TextView: UIViewRepresentable {
             let strikethroughAction = UIAction(title: "Strikethough") { action in
                 self.toggleStrikethrough(action.sender)
             }
-            let subscriptAction = UIAction(title: "Subscript") { action in
+            let subscriptAction = UIAction(image: UIImage(systemName: "textformat.subscript")) { action in
                 self.toggleSubscript(action.sender)
             }
-            let superscriptAction = UIAction(title: "Superscript") { action in
+            let superscriptAction = UIAction(image: UIImage(systemName: "textformat.superscript")) { action in
                 self.toggleSuperscript(action.sender)
             }
             builder.replaceChildren(ofMenu: .textStyle)  {
@@ -99,12 +76,13 @@ struct TextView: UIViewRepresentable {
             super.buildMenu(with: builder)
         }
         
-        // This is neetded for iOS 15
+        // This is needed for iOS 15
         open override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
             if #unavailable(iOS 16.0) {
                 let menuController = UIMenuController.shared
                 if var menuItems = menuController.menuItems,
-                   menuItems[0].title == "Bold" && menuItems.count < 5 {
+                   menuItems[0].title == "Bold" && menuItems.count < 6 {
+                    
                     menuItems.append(UIMenuItem(title: "Strikethrough", action: .toggleStrikethrough))
                     menuItems.append(UIMenuItem(title: "Subscript", action: .toggleSubscript))
                     menuItems.append(UIMenuItem(title: "Superscript", action: .toggleSuperscript))
@@ -147,21 +125,18 @@ struct TextView: UIViewRepresentable {
             attributedString.enumerateAttribute(.underlineStyle,
                                                 in: selectedRange,
                                                 options: []) { (value, range, stopFlag) in
-                let underline = value as? NSNumber ?? 0
-                if underline == 0  {
+                let underline = value as? NSNumber
+                if  underline == nil  {
                     isAllUnderlined = false
                     stopFlag.pointee = true
                 }
             }
-            attributedString.enumerateAttributes(in: selectedRange,
-                                                 options: []) {(value, range, stopFlag) in
-                if isAllUnderlined {
-                    attributedString.removeAttribute(.underlineStyle, range: range)
-                } else {
-                    attributedString.addAttribute(.underlineStyle,
-                                                  value: NSUnderlineStyle.single.rawValue,
-                                                  range: range)
-                }
+            if isAllUnderlined { // Bug in iOS 15 when all selected and underlined?
+                attributedString.removeAttribute(.underlineStyle, range: selectedRange)
+            } else {
+                attributedString.addAttribute(.underlineStyle,
+                                              value: 1,
+                                              range: selectedRange)
             }
             attributedText = attributedString
             if let update = self.delegate?.textViewDidChange { update(self) }
@@ -207,48 +182,30 @@ struct TextView: UIViewRepresentable {
             if let update = self.delegate?.textViewDidChange { update(self) }
         }
         
-        @objc func toggleSubscript(_ sender: Any?) {
-            let attributedString = NSMutableAttributedString(attributedString: attributedText)
-            var isAllSubscript = true
-            attributedString.enumerateAttributes(in: selectedRange,
-                                                 options: []) { (attributes, range, stopFlag) in
-                if let offset = attributes[.baselineOffset], (offset as? CGFloat ?? 0.0) < 0.0 {
-                } else {
-                    isAllSubscript = false
-                    stopFlag.pointee = true
-                }
-            }
-            attributedString.enumerateAttributes(in: selectedRange,
-                                                 options: []) {(attributes, range, stopFlag) in
-                let descriptor: UIFontDescriptor
-                if let font = attributes[.font] as? UIFont {descriptor = font.fontDescriptor }
-                else { descriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: .body) }
-                if let offset = attributes[.baselineOffset], (offset as? CGFloat ?? 0.0) < 0.0 {
-                    if isAllSubscript {
-                        attributedString.removeAttribute(.baselineOffset, range: range)
-                        let newFont = UIFont(descriptor: descriptor, size: descriptor.pointSize/0.75)
-                        attributedString.addAttribute(.font, value: newFont, range: range)
-                    }
-                } else {
-                    attributedString.addAttribute(.baselineOffset, value: -0.3*descriptor.pointSize,
-                                                  range: range)
-                    let newFont = UIFont(descriptor: descriptor, size: 0.75*descriptor.pointSize)
-                    attributedString.addAttribute(.font, value: newFont, range: range)
-                }
-            }
-            attributedText = attributedString
-            if let update = self.delegate?.textViewDidChange { update(self) }
-        }
+        @objc func toggleSubscript(_ sender: Any?) { toggleScript(sender, sub: true) }
         
-        @objc func toggleSuperscript(_ sender: Any?) {
+        @objc func toggleSuperscript(_ sender: Any?) { toggleScript(sender, sub: false) }
+        
+        func toggleScript(_ sender: Any?, sub: Bool = false) {
+            let sign = sub ? -1.0 : 1.0
             let attributedString = NSMutableAttributedString(attributedString: attributedText)
-            var isAllSuperscript = true
+            var isAllScript = true
             attributedString.enumerateAttributes(in: selectedRange,
                                                  options: []) { (attributes, range, stopFlag) in
-                if let offset = attributes[.baselineOffset], (offset as? CGFloat ?? 0.0) > 0.0 {
-                } else {
-                    isAllSuperscript = false
-                    stopFlag.pointee = true
+                if let offset = attributes[.baselineOffset] {
+                    let result = (offset as? CGFloat ?? 0.0) * sign
+                    if result <=  0.0 { // otherscript or normal
+                        isAllScript = false
+                        if result < 0.0 { // otherscript
+                            // Enlarge font and remove baselineOffset
+                            let descriptor: UIFontDescriptor
+                            if let font = attributes[.font] as? UIFont {descriptor = font.fontDescriptor }
+                            else { descriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: .body) }
+                            let newFont = UIFont(descriptor: descriptor, size: descriptor.pointSize/0.75)
+                            attributedString.addAttribute(.font, value: newFont, range: range)
+                            attributedString.removeAttribute(.baselineOffset, range: range)
+                        }
+                    }
                 }
             }
             attributedString.enumerateAttributes(in: selectedRange,
@@ -256,14 +213,14 @@ struct TextView: UIViewRepresentable {
                 let descriptor: UIFontDescriptor
                 if let font = attributes[.font] as? UIFont {descriptor = font.fontDescriptor }
                 else { descriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: .body) }
-                if let offset = attributes[.baselineOffset], (offset as? CGFloat ?? 0.0) > 0.0 {
-                    if isAllSuperscript {
+                if let offset = attributes[.baselineOffset] , sign*(offset as? CGFloat ?? 0.0) > 0.0 {
+                    if isAllScript {
                         attributedString.removeAttribute(.baselineOffset, range: range)
                         let newFont = UIFont(descriptor: descriptor, size: descriptor.pointSize/0.75)
                         attributedString.addAttribute(.font, value: newFont, range: range)
                     }
                 } else {
-                    attributedString.addAttribute(.baselineOffset, value: 0.4*descriptor.pointSize,
+                    attributedString.addAttribute(.baselineOffset, value: (sub ? -0.3 : 0.4)*descriptor.pointSize,
                                                   range: range)
                     let newFont = UIFont(descriptor: descriptor, size: 0.75*descriptor.pointSize)
                     attributedString.addAttribute(.font, value: newFont, range: range)
@@ -274,6 +231,7 @@ struct TextView: UIViewRepresentable {
         }
     }
 }
+
 
 fileprivate extension Selector {
     static let toggleBoldface = #selector(TextView.MyTextView.toggleBoldface(_:))
