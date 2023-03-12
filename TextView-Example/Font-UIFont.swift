@@ -30,8 +30,7 @@ extension AttributedString {
             // Get NSAttributes
             var nsAttributes = NSMutableAttributedString(AttributedString(self[run.range]))
                 .attributes(at: 0, effectiveRange: nil)
-            
-            var nsAttributes = nsRunAttributes //[NSAttributedString.Key : Any ]() // empty dictionary
+        
             // Handle font  /// A property for accessing a font attribute.
             if let font = run.font { // SwiftUI Font
                 if let uiFont = resolveFont(font)?.font(with: traitCollection) {
