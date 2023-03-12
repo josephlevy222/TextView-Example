@@ -192,20 +192,19 @@ struct TextView: UIViewRepresentable {
             var isAllScript = true
             attributedString.enumerateAttributes(in: selectedRange,
                                                  options: []) { (attributes, range, stopFlag) in
-                if let offset = attributes[.baselineOffset] {
-                    let result = (offset as? CGFloat ?? 0.0) * sign
-                    if result <=  0.0 { // otherscript or normal
-                        isAllScript = false
-                        if result < 0.0 { // otherscript
-                            // Enlarge font and remove baselineOffset
-                            let descriptor: UIFontDescriptor
-                            if let font = attributes[.font] as? UIFont {descriptor = font.fontDescriptor }
-                            else { descriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: .body) }
-                            let newFont = UIFont(descriptor: descriptor, size: descriptor.pointSize/0.75)
-                            attributedString.addAttribute(.font, value: newFont, range: range)
-                            attributedString.removeAttribute(.baselineOffset, range: range)
-                        }
-                    }
+                let offset = attributes[.baselineOffset]
+                let result = (offset as? CGFloat ?? 0.0) * sign
+                if result ==  0.0 { //  normal
+                    isAllScript = false
+                } else { // its super or subscript so set to normal
+                    // Enlarge font and remove baselineOffset
+                    let descriptor: UIFontDescriptor
+                    if let font = attributes[.font] as? UIFont {descriptor = font.fontDescriptor }
+                    else { descriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: .body) }
+                    let newFont = UIFont(descriptor: descriptor, size: descriptor.pointSize/0.75)
+                    attributedString.addAttribute(.font, value: newFont, range: range)
+                    attributedString.removeAttribute(.baselineOffset, range: range)
+                    isAllScript = isAllScript && result > 0.0
                 }
             }
             attributedString.enumerateAttributes(in: selectedRange,
@@ -213,13 +212,7 @@ struct TextView: UIViewRepresentable {
                 let descriptor: UIFontDescriptor
                 if let font = attributes[.font] as? UIFont {descriptor = font.fontDescriptor }
                 else { descriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: .body) }
-                if let offset = attributes[.baselineOffset] , sign*(offset as? CGFloat ?? 0.0) > 0.0 {
-                    if isAllScript {
-                        attributedString.removeAttribute(.baselineOffset, range: range)
-                        let newFont = UIFont(descriptor: descriptor, size: descriptor.pointSize/0.75)
-                        attributedString.addAttribute(.font, value: newFont, range: range)
-                    }
-                } else {
+                if !isAllScript { // everything is already normal if isAllScript
                     attributedString.addAttribute(.baselineOffset, value: (sub ? -0.3 : 0.4)*descriptor.pointSize,
                                                   range: range)
                     let newFont = UIFont(descriptor: descriptor, size: 0.75*descriptor.pointSize)
