@@ -30,7 +30,6 @@ extension AttributedString {
             // Get NSAttributes
             var nsAttributes = NSMutableAttributedString(AttributedString(self[run.range]))
                 .attributes(at: 0, effectiveRange: nil)
-        
             // Handle font  /// A property for accessing a font attribute.
             if let font = run.font { // SwiftUI Font
                 if let uiFont = resolveFont(font)?.font(with: traitCollection) {
@@ -40,7 +39,6 @@ extension AttributedString {
                         nsAttributes[.font] = UIFont.preferredFont(forTextStyle: .body, compatibleWith: traitCollection)}
                 }
             }
-            
             // Handle other SwiftUIAttributes
             // foregroundColor /// A property for accessing a foreground color attribute.
             if let color = run.foregroundColor, color != nsAttributes[.foregroundColor] as? Color {
@@ -50,8 +48,7 @@ extension AttributedString {
             if let color = run.backgroundColor, color != nsAttributes[.backgroundColor] as? Color {
                 nsAttributes[.backgroundColor] = UIColor(color)
             }
-            //else { nsAttributes.removeValue(forKey: .backgroundColor) }
-            // strikethrough /// A property for accessing a strikethrough style attribute.
+            // strikethroughStyle /// A property for accessing a strikethrough style attribute.
             if let strikethroughStyle = run.strikethroughStyle {
                 if nsAttributes[.strikethroughStyle] == nil {
                     nsAttributes[.strikethroughStyle] = strikethroughStyle }

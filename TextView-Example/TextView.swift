@@ -44,7 +44,8 @@ struct TextView: UIViewRepresentable {
         func textViewDidChange(_ textView: UITextView) {
             self.text.wrappedValue = {
                 do { return try AttributedString(textView.attributedText, including: \.uiKit) }
-                catch { return AttributedString(textView.attributedText)}}()
+                catch { return AttributedString(textView.attributedText)}
+            }()
         }
     }
     
@@ -82,7 +83,6 @@ struct TextView: UIViewRepresentable {
                 let menuController = UIMenuController.shared
                 if var menuItems = menuController.menuItems,
                    menuItems[0].title == "Bold" && menuItems.count < 6 {
-                    
                     menuItems.append(UIMenuItem(title: "Strikethrough", action: .toggleStrikethrough))
                     menuItems.append(UIMenuItem(title: "Subscript", action: .toggleSubscript))
                     menuItems.append(UIMenuItem(title: "Superscript", action: .toggleSuperscript))
