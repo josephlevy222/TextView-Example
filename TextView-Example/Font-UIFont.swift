@@ -290,9 +290,9 @@ struct TextStyleProvider: FontProvider {
     var weight: UIFont.Weight?
     func fontDescriptor(with traitCollection: UITraitCollection?) -> UIFontDescriptor {
         let uiFont = UIFont
-            .preferredFont(forTextStyle: style ?? UIFont.TextStyle(rawValue: "UICTFontTextStyleBody"), compatibleWith: traitCollection)
+            .preferredFont(forTextStyle: style ?? UIFont.TextStyle(rawValue: "UICTFontTextStyleBody"),
+                           compatibleWith: traitCollection)
             .withWeight(weight)
-        //if let style { print("style=\(style)") } else { print("style = .body")}
         if let descriptor = uiFont.fontDescriptor
             .withDesign(design)?
             .addingAttributes([.size : uiFont.pointSize])
