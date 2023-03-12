@@ -50,7 +50,7 @@ struct TextView: UIViewRepresentable {
     }
     
     class MyTextView: UITextView {
-        // This works in iOS 16 never called in 15 I believe
+        // This works in iOS 16 but never called in 15 I believe
         open override func buildMenu(with builder: UIMenuBuilder) {
             builder.remove(menu: .lookup) // Lookup, Translate, Search Web
             //builder.remove(menu: .standardEdit) // Keep Cut, Copy, Paste
@@ -149,9 +149,7 @@ struct TextView: UIViewRepresentable {
         @objc override func toggleItalics(_ sender: Any?) {
             toggleSymbolicTrait(sender, trait: .traitItalic)
         }
-        @objc  func interactions(_ sender: Any?)  {
-            print(interactions )
-        }
+       
         private func toggleSymbolicTrait(_ sender: Any?, trait: UIFontDescriptor.SymbolicTraits) {
             let attributedString = NSMutableAttributedString(attributedString: attributedText)
             var isAll = true
@@ -186,7 +184,7 @@ struct TextView: UIViewRepresentable {
         
         @objc func toggleSuperscript(_ sender: Any?) { toggleScript(sender, sub: false) }
         
-        func toggleScript(_ sender: Any?, sub: Bool = false) {
+        private func toggleScript(_ sender: Any?, sub: Bool = false) {
             let sign = sub ? -1.0 : 1.0
             let attributedString = NSMutableAttributedString(attributedString: attributedText)
             var isAllScript = true
