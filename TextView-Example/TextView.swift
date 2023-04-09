@@ -95,6 +95,11 @@ struct TextView: UIViewRepresentable {
             return super.canPerformAction(action, withSender: sender)
         }
         
+        private func updateAttributedText(with attributedString: NSAttributedString) {
+            attributedText = attributedString
+            if let update = delegate?.textViewDidChange { update(self) }
+        }
+        
         @objc func toggleStrikethrough(_ sender: Any?) {
             let attributedString = NSMutableAttributedString(attributedString: attributedText)
             var isAllStrikethrough = true
@@ -112,8 +117,7 @@ struct TextView: UIViewRepresentable {
             } else {
                 attributedString.addAttribute(.strikethroughStyle, value: 1, range: selectedRange)
             }
-            attributedText = attributedString
-            if let update = self.delegate?.textViewDidChange { update(self) }
+            updateAttributedText(with: attributedString)
         }
         
         @objc override func toggleUnderline(_ sender: Any?) {
@@ -129,15 +133,14 @@ struct TextView: UIViewRepresentable {
                 }
             }
             if isAllUnderlined {
-                // Bug in iOS 15 when all selected and underlined that I can't fix so far
+                // Bug in iOS 15 when all selected and underlined that I can't fix as yet
                 attributedString.removeAttribute(.underlineStyle, range: selectedRange)
             } else {
                 attributedString.addAttribute(.underlineStyle,
                                               value: 1,
                                               range: selectedRange)
             }
-            attributedText = attributedString
-            if let update = self.delegate?.textViewDidChange { update(self) }
+            updateAttributedText(with: attributedString)
         }
         
         @objc override func toggleBoldface(_ sender: Any?) {
@@ -164,21 +167,16 @@ struct TextView: UIViewRepresentable {
                 let uiFont = value as? UIFont
                 if  let descriptor = uiFont?.fontDescriptor {
                     // Fix bug in largeTitle by setting bold weight directly
-                    let hasBoldTrait = descriptor.symbolicTraits.intersection(.traitBold) == .traitBold
-                    var weight = hasBoldTrait ? .bold : descriptor.weight
+                    var weight = descriptor.symbolicTraits.intersection(.traitBold) == .traitBold ? .bold : descriptor.weight
                     weight = trait != .traitBold ? weight : (isAll ? .regular : .bold)
-                    if let fontDescriptor = isAll ?
-                        descriptor.withSymbolicTraits(descriptor.symbolicTraits.subtracting(trait))
-                        : descriptor.withSymbolicTraits(descriptor.symbolicTraits.union(trait)) {
-                        attributedString.addAttribute(.font,
-                                                      value: UIFont(descriptor: fontDescriptor.withWeight(weight),
-                                                                    size: descriptor.pointSize),
-                                                      range: range)
+                    if let fontDescriptor = isAll ? descriptor.withSymbolicTraits(descriptor.symbolicTraits.subtracting(trait))
+                                                  : descriptor.withSymbolicTraits(descriptor.symbolicTraits.union(trait)) {
+                        attributedString.addAttribute(.font, value: UIFont(descriptor: fontDescriptor.withWeight(weight),
+                                                             size: descriptor.pointSize), range: range)
                     }
                 }
             }
-            attributedText = attributedString
-            if let update = self.delegate?.textViewDidChange { update(self) }
+            updateAttributedText(with: attributedString)
         }
         
         @objc func toggleSubscript(_ sender: Any?) { toggleScript(sender, sub: true) }
@@ -229,8 +227,7 @@ struct TextView: UIViewRepresentable {
                 } else { newFont = UIFont.preferredFont(forTextStyle: .body) }
                 attributedString.addAttribute(.font, value: newFont, range: range)
             }
-            attributedText = attributedString
-            if let update = self.delegate?.textViewDidChange { update(self) }
+            updateAttributedText(with: attributedString)
         }
     }
 }

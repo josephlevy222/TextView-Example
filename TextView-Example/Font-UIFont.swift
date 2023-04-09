@@ -91,7 +91,6 @@ extension AttributedString {
 /// and setFont for SwiftUI.Font, along with setBold, and setItalic that work with SwiftUI.Font and UIFont
 /// embedded in the attributed string
 fileprivate let defaultHeaderFonts: [Font.TextStyle] = [.body,.largeTitle,.title,.title2,.title3,.headline,.subheadline]
-
 extension AttributedString {
     init(styledMarkdown markdownString: String,
          fontStyles: [Font.TextStyle] = defaultHeaderFonts,
@@ -106,14 +105,21 @@ extension AttributedString {
             baseURL: nil
         )
         typealias IntentAttribute = AttributeScopes.FoundationAttributes.PresentationIntentAttribute
-        for (intentBlock, intentRange) in output.runs[IntentAttribute.self] .reversed() {
-            guard let intentBlock else { continue }
-            for intent in intentBlock.components {
-                for level in 1..<fontStyles.count where intent.kind == .header(level: level) {
-                    output[intentRange].font = UIFont
-                        .preferredFont(forTextStyle: UIFont.preferredFontStyle(from: fontStyles[level]))
+        for (intentBlock, intentRange) in output.runs[IntentAttribute.self].reversed() {
+                guard let intentBlock = intentBlock else { continue }
+                for intent in intentBlock.components {
+                    switch intent.kind {
+                    case .header(level: let level):
+                        switch level {
+                        case 0...6:
+                            output[intentRange].font = UIFont.preferredFont(forTextStyle: UIFont.preferredFontStyle(from: fontStyles[level]))
+                        default:
+                            break
+                        }
+                    default:
+                        break
+                    }
                 }
-            }
             if insertCR && intentRange.lowerBound != output.startIndex {
                 output.characters.insert(contentsOf: "\n", at: intentRange.lowerBound)
             }
@@ -146,7 +152,7 @@ extension AttributedString {
         return newAS
     }
     
-    func setItalic() -> AttributedString {
+    func setItalic() -> AttributedString { //Still setItalic
         var newAS = self
         for run in runs {
             if let uiFont = NSAttributedString(AttributedString(self[run.range]))
@@ -163,6 +169,55 @@ extension AttributedString {
             }
         }
         return newAS
+    }
+    
+    
+    func resetBold() -> AttributedString { //Still setBold
+        var newAS = self
+        for run in runs {
+            if let uiFont = NSAttributedString(AttributedString(self[run.range]))
+                .attributes(at: 0, effectiveRange: nil)[.font] as? UIFont  {
+                newAS[run.range].font = nil // just in case Font is still there
+                newAS[run.range].font = uiFont.bold() }
+            else {
+                if let font = run.font {
+                    if let uiFont = resolveFont(font)?.font(with: nil) {
+                        newAS[run.range].font = nil // erase SwiftUI.Font
+                        newAS[run.range].font = uiFont.bold() ?? uiFont // add font
+                    } else { newAS[run.range].font = font.bold() }
+                }
+            }
+        }
+        return newAS
+    }
+    
+    func resetItalic() -> AttributedString {
+        var newAS = self
+        for run in runs {
+            if let uiFont = NSAttributedString(AttributedString(self[run.range]))
+                .attributes(at: 0, effectiveRange: nil)[.font] as? UIFont  {
+                newAS[run.range].font = nil
+                newAS[run.range].font = uiFont.italic() }
+            else {
+                if let font = run.font {
+                    if let uiFont = resolveFont(font)?.font(with: nil) {
+                        newAS[run.range].font = nil
+                        newAS[run.range].font = uiFont.italic() ?? uiFont // add font
+                    } else { newAS[run.range].font = font.italic() }
+                }
+            }
+        }
+        return newAS
+    }
+}
+
+extension String {
+    func markdownToAttributed() -> AttributedString {
+        do {
+            return try AttributedString(styledMarkdown: self)
+        } catch {
+            return AttributedString("Error parsing markdown \(error)")
+        }
     }
 }
 
@@ -289,7 +344,7 @@ struct TextStyleProvider: FontProvider {
     var weight: UIFont.Weight?
     func fontDescriptor(with traitCollection: UITraitCollection?) -> UIFontDescriptor {
         let uiFont = UIFont
-            .preferredFont(forTextStyle: style ?? UIFont.TextStyle(rawValue: "UICTFontTextStyleBody"),
+            .preferredFont(forTextStyle: style ?? UIFont.TextStyle.body,
                            compatibleWith: traitCollection)
             .withWeight(weight)
         if let descriptor = uiFont.fontDescriptor
