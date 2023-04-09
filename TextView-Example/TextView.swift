@@ -12,7 +12,7 @@ struct TextView: UIViewRepresentable {
     @Binding var attributedText: AttributedString
     @State var allowsEditingTextAttributes: Bool = false
     
-    let defaultFont = UIFont.preferredFont(from: .body)
+    let defaultFont = UIFont.preferredFont(forTextStyle: .body)
     
     func makeUIView(context: Context) -> UITextView {
         let uiView = MyTextView()
@@ -42,10 +42,7 @@ struct TextView: UIViewRepresentable {
         }
         
         func textViewDidChange(_ textView: UITextView) {
-            self.text.wrappedValue = {
-                do { return try AttributedString(textView.attributedText, including: \.uiKit) }
-                catch { return AttributedString(textView.attributedText)}
-            }()
+            self.text.wrappedValue = textView.attributedText.attributedString
         }
     }
     
@@ -83,9 +80,9 @@ struct TextView: UIViewRepresentable {
                 let menuController = UIMenuController.shared
                 if var menuItems = menuController.menuItems,
                    menuItems[0].title == "Bold" && menuItems.count < 6 {
-                    menuItems.append(UIMenuItem(title: "Strikethrough", action: .toggleStrikethrough))
                     menuItems.append(UIMenuItem(title: "Subscript", action: .toggleSubscript))
                     menuItems.append(UIMenuItem(title: "Superscript", action: .toggleSuperscript))
+                    menuItems.append(UIMenuItem(title: "Strikethrough", action: .toggleStrikethrough))
                     menuController.menuItems = menuItems
                 }
                 // Get rid of menu item not wanted
@@ -131,7 +128,8 @@ struct TextView: UIViewRepresentable {
                     stopFlag.pointee = true
                 }
             }
-            if isAllUnderlined { // Bug in iOS 15 when all selected and underlined?
+            if isAllUnderlined {
+                // Bug in iOS 15 when all selected and underlined that I can't fix so far
                 attributedString.removeAttribute(.underlineStyle, range: selectedRange)
             } else {
                 attributedString.addAttribute(.underlineStyle,
@@ -165,7 +163,10 @@ struct TextView: UIViewRepresentable {
                                                 options: []) {(value, range, stopFlag) in
                 let uiFont = value as? UIFont
                 if  let descriptor = uiFont?.fontDescriptor {
-                    let weight = trait != .traitBold ? descriptor.weight : (isAll ? nil : .bold)
+                    // Fix bug in largeTitle by setting bold weight directly
+                    let hasBoldTrait = descriptor.symbolicTraits.intersection(.traitBold) == .traitBold
+                    var weight = hasBoldTrait ? .bold : descriptor.weight
+                    weight = trait != .traitBold ? weight : (isAll ? .regular : .bold)
                     if let fontDescriptor = isAll ?
                         descriptor.withSymbolicTraits(descriptor.symbolicTraits.subtracting(trait))
                         : descriptor.withSymbolicTraits(descriptor.symbolicTraits.union(trait)) {
@@ -185,37 +186,48 @@ struct TextView: UIViewRepresentable {
         @objc func toggleSuperscript(_ sender: Any?) { toggleScript(sender, sub: false) }
         
         private func toggleScript(_ sender: Any?, sub: Bool = false) {
-            let sign = sub ? -1.0 : 1.0
+            let newOffset = sub ? -0.3 : 0.4
             let attributedString = NSMutableAttributedString(attributedString: attributedText)
             var isAllScript = true
             attributedString.enumerateAttributes(in: selectedRange,
                                                  options: []) { (attributes, range, stopFlag) in
-                let offset = attributes[.baselineOffset]
-                let result = (offset as? CGFloat ?? 0.0) * sign
-                if result ==  0.0 { //  normal
+                //let offset = attributes[.baselineOffset]
+                let isNotOffset = (attributes[.baselineOffset] as? CGFloat ?? 0.0) == 0.0
+                if isNotOffset { //  normal
                     isAllScript = false
                 } else { // its super or subscript so set to normal
                     // Enlarge font and remove baselineOffset
+                    var newFont : UIFont
                     let descriptor: UIFontDescriptor
-                    if let font = attributes[.font] as? UIFont {descriptor = font.fontDescriptor }
-                    else { descriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: .body) }
-                    let newFont = UIFont(descriptor: descriptor, size: descriptor.pointSize/0.75)
+                    if let font = attributes[.font] as? UIFont {
+                        descriptor = font.fontDescriptor
+                        newFont = UIFont(descriptor: descriptor, size: descriptor.pointSize/0.75)
+                        attributedString.removeAttribute(.baselineOffset, range: range)
+                        if descriptor.symbolicTraits.intersection(.traitItalic) == .traitItalic, let font = newFont.italic() {
+                            newFont = font
+                        }
+                    } else { newFont = UIFont.preferredFont(forTextStyle: .body) }
                     attributedString.addAttribute(.font, value: newFont, range: range)
-                    attributedString.removeAttribute(.baselineOffset, range: range)
-                    isAllScript = isAllScript && result > 0.0
                 }
             }
             attributedString.enumerateAttributes(in: selectedRange,
                                                  options: []) {(attributes, range, stopFlag) in
+                var newFont : UIFont
                 let descriptor: UIFontDescriptor
-                if let font = attributes[.font] as? UIFont {descriptor = font.fontDescriptor }
-                else { descriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: .body) }
-                if !isAllScript { // everything is already normal if isAllScript
-                    attributedString.addAttribute(.baselineOffset, value: (sub ? -0.3 : 0.4)*descriptor.pointSize,
-                                                  range: range)
-                    let newFont = UIFont(descriptor: descriptor, size: 0.75*descriptor.pointSize)
-                    attributedString.addAttribute(.font, value: newFont, range: range)
-                }
+                if let font = attributes[.font] as? UIFont {
+                    descriptor = font.fontDescriptor
+                    newFont = font
+                    if !isAllScript { // everything is already normal if isAllScript
+                        attributedString.addAttribute(.baselineOffset, value: newOffset*descriptor.pointSize,
+                                                      range: range)
+                        newFont = UIFont(descriptor: descriptor, size: 0.75*descriptor.pointSize)
+                        
+                    }
+                    if descriptor.symbolicTraits.intersection(.traitItalic) == .traitItalic, let font = newFont.italic() {
+                        newFont = font
+                    }
+                } else { newFont = UIFont.preferredFont(forTextStyle: .body) }
+                attributedString.addAttribute(.font, value: newFont, range: range)
             }
             attributedText = attributedString
             if let update = self.delegate?.textViewDidChange { update(self) }

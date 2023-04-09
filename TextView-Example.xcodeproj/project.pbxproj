@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		3733DB6B29AD73C8000ADFCE /* AttributedTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3733DB6A29AD73C7000ADFCE /* AttributedTextView.swift */; };
 		37D480BE29B6983500B18D09 /* LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = 37D480BD29B6983500B18D09 /* LICENSE.txt */; };
 		37DB23622989CAC80021BDD0 /* TextView_ExampleApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37DB23612989CAC80021BDD0 /* TextView_ExampleApp.swift */; };
 		37DB23642989CAC80021BDD0 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37DB23632989CAC80021BDD0 /* ContentView.swift */; };
@@ -18,7 +17,6 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		3733DB6A29AD73C7000ADFCE /* AttributedTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttributedTextView.swift; sourceTree = "<group>"; };
 		37D480BD29B6983500B18D09 /* LICENSE.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = LICENSE.txt; sourceTree = "<group>"; };
 		37DB235E2989CAC80021BDD0 /* TextView-Example.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "TextView-Example.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		37DB23612989CAC80021BDD0 /* TextView_ExampleApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextView_ExampleApp.swift; sourceTree = "<group>"; };
@@ -52,7 +50,6 @@
 		37DB23552989CAC70021BDD0 = {
 			isa = PBXGroup;
 			children = (
-				3733DB6A29AD73C7000ADFCE /* AttributedTextView.swift */,
 				37DB23602989CAC80021BDD0 /* TextView-Example */,
 				37DB235F2989CAC80021BDD0 /* Products */,
 			);
@@ -161,7 +158,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				37DB23712989CB330021BDD0 /* TextView.swift in Sources */,
-				3733DB6B29AD73C8000ADFCE /* AttributedTextView.swift in Sources */,
 				37DB23732989CBE80021BDD0 /* Font-UIFont.swift in Sources */,
 				37DB23642989CAC80021BDD0 /* ContentView.swift in Sources */,
 				37DB23622989CAC80021BDD0 /* TextView_ExampleApp.swift in Sources */,

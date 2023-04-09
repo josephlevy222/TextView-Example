@@ -11,7 +11,7 @@ import SwiftUI
 struct TextView_ExampleApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView(text: aText, nsText: aText.nsAttributedString)
+            ContentView(text: aText)
         }
     }
 }
